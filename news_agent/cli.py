@@ -9,6 +9,7 @@ from rich.table import Table
 
 from news_agent.config import Settings, get_settings
 from news_agent.orchestrator import run_digest
+from news_agent.output.console import render_digest
 
 app = typer.Typer(help="news-agent: tech news digest powered by Claude.")
 config_app = typer.Typer(help="Configuration commands.")
@@ -100,7 +101,7 @@ def run(
         console.print(f"[red]Error: {e}[/red]")
         raise typer.Exit(code=1)
 
-    console.print(digest.narrative)
+    render_digest(digest, console)
 
     if not no_file:
         settings.output_dir.mkdir(parents=True, exist_ok=True)
