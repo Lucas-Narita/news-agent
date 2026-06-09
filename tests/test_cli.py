@@ -22,6 +22,7 @@ def test_config_check_all_present(monkeypatch):
     monkeypatch.setenv("NEWSAPI_KEY", "news-test-5678")
     monkeypatch.setenv("GITHUB_TOKEN", "ghp-test-9012")
     from news_agent.cli import app
+
     result = runner.invoke(app, ["config", "check"])
     assert result.exit_code == 0
     assert "ANTHROPIC_API_KEY" in result.output
@@ -33,6 +34,7 @@ def test_config_check_optional_missing(monkeypatch):
     monkeypatch.delenv("NEWSAPI_KEY", raising=False)
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
     from news_agent.cli import app
+
     result = runner.invoke(app, ["config", "check"])
     assert result.exit_code == 0
     assert "OPTIONAL" in result.output
@@ -41,6 +43,7 @@ def test_config_check_optional_missing(monkeypatch):
 def test_config_check_missing_required(monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     from news_agent.cli import app
+
     result = runner.invoke(app, ["config", "check"])
     assert result.exit_code == 1
 
@@ -50,6 +53,7 @@ def test_resolve_sources_from_flag(monkeypatch):
     monkeypatch.delenv("NEWSAPI_KEY", raising=False)
     from news_agent.cli import resolve_sources
     from news_agent.config import get_settings
+
     settings = get_settings()
     assert resolve_sources("hackernews,github", settings) == ["hackernews", "github"]
 
@@ -59,6 +63,7 @@ def test_resolve_sources_auto_detects_missing_newsapi(monkeypatch):
     monkeypatch.delenv("NEWSAPI_KEY", raising=False)
     from news_agent.cli import resolve_sources
     from news_agent.config import get_settings
+
     settings = get_settings()
     result = resolve_sources(None, settings)
     assert "newsapi" not in result
@@ -71,6 +76,7 @@ def test_resolve_sources_includes_newsapi_when_key_present(monkeypatch):
     monkeypatch.setenv("NEWSAPI_KEY", "news-key")
     from news_agent.cli import resolve_sources
     from news_agent.config import get_settings
+
     settings = get_settings()
     result = resolve_sources(None, settings)
     assert "newsapi" in result
@@ -80,6 +86,7 @@ def test_run_no_file_prints_narrative(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     monkeypatch.delenv("NEWSAPI_KEY", raising=False)
     from news_agent.cli import app
+
     with patch("news_agent.cli.run_digest", new=AsyncMock(return_value=_mock_digest())):
         result = runner.invoke(app, ["run", "--no-file", "--sources", "hackernews"])
     assert result.exit_code == 0
@@ -91,6 +98,7 @@ def test_run_writes_md_file_by_default(monkeypatch, tmp_path):
     monkeypatch.setenv("OUTPUT_DIR", str(tmp_path))
     monkeypatch.delenv("NEWSAPI_KEY", raising=False)
     from news_agent.cli import app
+
     with patch("news_agent.cli.run_digest", new=AsyncMock(return_value=_mock_digest())):
         result = runner.invoke(app, ["run", "--sources", "hackernews"])
     assert result.exit_code == 0

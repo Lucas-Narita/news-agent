@@ -1,5 +1,4 @@
 import httpx
-import pytest
 import respx
 
 GITHUB_API = "https://api.github.com/search/repositories"
@@ -16,9 +15,7 @@ def _make_repo(i: int) -> dict:
 
 
 def _github_response(n: int = 10) -> httpx.Response:
-    return httpx.Response(
-        200, json={"items": [_make_repo(i) for i in range(n)], "total_count": n}
-    )
+    return httpx.Response(200, json={"items": [_make_repo(i) for i in range(n)], "total_count": n})
 
 
 async def test_github_happy_path(monkeypatch):

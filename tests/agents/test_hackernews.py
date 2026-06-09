@@ -1,7 +1,6 @@
 import re
 
 import httpx
-import pytest
 import respx
 
 from news_agent.agents.hackernews import HackerNewsAgent
@@ -65,9 +64,7 @@ async def test_hackernews_filters_items_without_url():
 
 async def test_hackernews_network_timeout():
     with respx.mock:
-        respx.get(f"{HN_BASE}/topstories.json").mock(
-            side_effect=httpx.TimeoutException("timeout")
-        )
+        respx.get(f"{HN_BASE}/topstories.json").mock(side_effect=httpx.TimeoutException("timeout"))
 
         agent = HackerNewsAgent()
         result = await agent.fetch()
@@ -78,9 +75,7 @@ async def test_hackernews_network_timeout():
 
 async def test_hackernews_api_error():
     with respx.mock:
-        respx.get(f"{HN_BASE}/topstories.json").mock(
-            return_value=httpx.Response(500)
-        )
+        respx.get(f"{HN_BASE}/topstories.json").mock(return_value=httpx.Response(500))
 
         agent = HackerNewsAgent()
         result = await agent.fetch()

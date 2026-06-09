@@ -18,9 +18,7 @@ class GitHubAgent(BaseAgent):
         settings = get_settings()
         since = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
         headers = (
-            {"Authorization": f"Bearer {settings.github_token}"}
-            if settings.github_token
-            else {}
+            {"Authorization": f"Bearer {settings.github_token}"} if settings.github_token else {}
         )
 
         try:
@@ -60,6 +58,4 @@ class GitHubAgent(BaseAgent):
                 error=str(e),
             )
 
-        return AgentResult(
-            source=self.name, articles=articles, fetched_at=datetime.now()
-        )
+        return AgentResult(source=self.name, articles=articles, fetched_at=datetime.now())

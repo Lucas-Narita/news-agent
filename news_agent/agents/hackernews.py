@@ -43,6 +43,8 @@ class HackerNewsAgent(BaseAgent):
                 ]
 
         except Exception as e:
-            return AgentResult(source=self.name, articles=[], fetched_at=datetime.now(), error=str(e))
+            return AgentResult(
+                source=self.name, articles=[], fetched_at=datetime.now(), error=str(e)
+            )
 
         return AgentResult(source=self.name, articles=articles, fetched_at=datetime.now())
