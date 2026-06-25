@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime
+from importlib.metadata import version
 from typing import Optional
 
 import typer
@@ -16,6 +17,25 @@ config_app = typer.Typer(help="Configuration commands.")
 app.add_typer(config_app, name="config")
 
 console = Console()
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        console.print(f"news-agent {version('news-agent')}")
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version_flag: bool = typer.Option(
+        False,
+        "--version",
+        callback=_version_callback,
+        is_eager=True,
+        help="Show the version and exit.",
+    ),
+) -> None:
+    """news-agent: tech news digest powered by Claude."""
 
 
 @config_app.command("check")

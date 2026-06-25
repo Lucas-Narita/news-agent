@@ -105,3 +105,14 @@ def test_run_writes_md_file_by_default(monkeypatch, tmp_path):
     md_files = list(tmp_path.glob("digest-*.md"))
     assert len(md_files) == 1
     assert "Top stories this hour." in md_files[0].read_text()
+
+
+def test_version_flag_shows_version():
+    from importlib.metadata import version
+
+    from news_agent.cli import app
+
+    result = runner.invoke(app, ["--version"])
+    assert result.exit_code == 0
+    assert "news-agent" in result.output
+    assert version("news-agent") in result.output
