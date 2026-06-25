@@ -1,5 +1,9 @@
 # news-agent
 
+[![CI](https://github.com/Lucas-Narita/news-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Lucas-Narita/news-agent/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
+
 A multi-agent CLI that aggregates tech news from **HackerNews**, **GitHub Trending**, and
 **NewsAPI** in parallel, then uses **Claude** to turn the raw feed into a concise Markdown
 digest — printed to the terminal and saved to disk.
