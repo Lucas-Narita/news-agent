@@ -13,7 +13,7 @@ Agent CLI que agrega notícias e tendências de tech em tempo real (HackerNews, 
 
 **Objetivo:** projeto de portfólio público para posicionamento como AI Agent Engineer.
 **Proprietário:** Lucas Narita
-**Status inicial:** design aprovado, pronto para implementação incremental.
+**Status:** seções 1–8 implementadas e testadas — 53 testes (cobertura ≥80%), CI no GitHub Actions (lint + format + testes), LICENSE MIT. Pronto como peça de portfólio.
 
 ---
 
@@ -166,31 +166,31 @@ class BaseAgent(ABC):
 
 ---
 
-## Seções de design já aprovadas
+## Status de implementação
+
+Todas as seções de design foram implementadas e testadas:
 
 - [x] Seção 1: Arquitetura geral (fluxo, stack, APIs)
 - [x] Seção 2: Estrutura de pastas e contratos de dados
+- [x] Seção 3: Config + CLI (`pyproject.toml`, `config.py`, `cli.py`)
+- [x] Seção 4: BaseAgent + implementação dos 3 agents
+- [x] Seção 5: Orchestrator (`asyncio.gather`, degradação graceful)
+- [x] Seção 6: LLM client + prompt strategy (com prompt caching)
+- [x] Seção 7: Output (markdown formatter + console rich)
+- [x] Seção 8: Testes + README
 
-## Próximas seções a desenvolver
-
-- [ ] Seção 3: Config + CLI (pyproject.toml, config.py, cli.py)
-- [ ] Seção 4: BaseAgent + implementação dos 3 agents
-- [ ] Seção 5: Orchestrator (asyncio.gather, degradação graceful)
-- [ ] Seção 6: LLM client + prompt strategy
-- [ ] Seção 7: Output (markdown formatter + console rich)
-- [ ] Seção 8: Testes + README
+**Qualidade:** 53 testes (mockados, sem rede), cobertura ≥80% com gate no pytest,
+CI no GitHub Actions (lint + format + testes em Python 3.11/3.12/3.13), LICENSE MIT.
 
 ---
 
 ## Como continuar
 
-Ao abrir esse projeto, diga:
+O design base está completo. A partir daqui, evoluções típicas:
 
-> "Continue o design do news-agent a partir da Seção 3."
-
-Ou para ir direto à implementação de uma seção específica:
-
-> "Implemente a Seção 4 — agents."
+- **Adicionar uma nova fonte:** criar `news_agent/agents/<fonte>.py` (subclasse de
+  `BaseAgent`) e registrá-la no orquestrador — nada mais muda (Open/Closed).
+- **Ajustar a estratégia de prompt:** editar `news_agent/llm/prompts.py`.
 
 ---
 
