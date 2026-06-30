@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from datetime import datetime
 
 from news_agent.agents.github import GitHubAgent
@@ -9,6 +10,8 @@ from news_agent.llm.client import generate_narrative
 from news_agent.output.markdown import format_articles
 from news_agent.processing import deduplicate, rank_by_score
 from news_agent.schemas.models import Article, DigestOutput
+
+logger = logging.getLogger(__name__)
 
 _REGISTRY = {
     "hackernews": HackerNewsAgent,
@@ -34,6 +37,8 @@ async def run_digest(
         if result.error is None:
             articles.extend(result.articles)
             sources_used.append(result.source)
+        else:
+            logger.warning("source %s failed: %s", result.source, result.error)
 
     articles = rank_by_score(deduplicate(articles))
     if limit is not None:

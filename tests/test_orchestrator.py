@@ -188,6 +188,33 @@ async def test_run_digest_deduplicates_and_ranks_before_narrating(monkeypatch):
     assert ranked[0].source == "github"  # the stronger copy of the shared URL won
 
 
+async def test_run_digest_logs_warning_for_failed_source(monkeypatch, caplog):
+    """A failed source degrades gracefully but is logged, not silently swallowed."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.config import get_settings
+
+    settings = get_settings()
+
+    with (
+        patch(
+            "news_agent.orchestrator.HackerNewsAgent.fetch",
+            new=AsyncMock(return_value=_ok_result("hackernews")),
+        ),
+        patch(
+            "news_agent.orchestrator.GitHubAgent.fetch",
+            new=AsyncMock(return_value=_err_result("github")),
+        ),
+        patch("news_agent.orchestrator.generate_narrative", new=AsyncMock(return_value="# Digest")),
+    ):
+        from news_agent.orchestrator import run_digest
+
+        with caplog.at_level("WARNING"):
+            await run_digest(["hackernews", "github"], settings)
+
+    warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+    assert any("github" in r.getMessage() and "API failed" in r.getMessage() for r in warnings)
+
+
 async def test_run_digest_applies_limit_to_top_ranked(monkeypatch):
     """A limit keeps only the top-N ranked articles, trimming before the LLM."""
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
