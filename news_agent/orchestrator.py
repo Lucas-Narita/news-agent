@@ -5,6 +5,7 @@ from datetime import datetime
 from news_agent.agents.devto import DevToAgent
 from news_agent.agents.github import GitHubAgent
 from news_agent.agents.hackernews import HackerNewsAgent
+from news_agent.agents.lobsters import LobstersAgent
 from news_agent.agents.newsapi import NewsAPIAgent
 from news_agent.agents.reddit import RedditAgent
 from news_agent.config import Settings
@@ -21,6 +22,7 @@ _REGISTRY = {
     "newsapi": NewsAPIAgent,
     "reddit": RedditAgent,
     "devto": DevToAgent,
+    "lobsters": LobstersAgent,
 }
 
 
