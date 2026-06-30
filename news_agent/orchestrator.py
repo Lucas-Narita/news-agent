@@ -7,6 +7,7 @@ from news_agent.agents.newsapi import NewsAPIAgent
 from news_agent.config import Settings
 from news_agent.llm.client import generate_narrative
 from news_agent.output.markdown import format_articles
+from news_agent.processing import deduplicate, rank_by_score
 from news_agent.schemas.models import Article, DigestOutput
 
 _REGISTRY = {
@@ -31,6 +32,8 @@ async def run_digest(sources: list[str], settings: Settings) -> DigestOutput:
         if result.error is None:
             articles.extend(result.articles)
             sources_used.append(result.source)
+
+    articles = rank_by_score(deduplicate(articles))
 
     if not articles:
         return DigestOutput(
