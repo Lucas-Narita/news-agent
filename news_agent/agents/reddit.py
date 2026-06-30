@@ -12,6 +12,26 @@ USER_AGENT = "news-agent/0.1 (tech digest bot)"
 LIMIT = 10
 
 
+def _parse_child(child: dict, source: str) -> Article | None:
+    """Build an Article from one Reddit child, or None if the item is malformed.
+
+    Parsing per-item keeps a single bad entry from sinking the whole source.
+    """
+    try:
+        data = child["data"]
+        if not data.get("url"):
+            return None
+        return Article(
+            title=data["title"],
+            url=data["url"],
+            source=source,
+            score=data.get("score"),
+            published_at=datetime.fromtimestamp(data["created_utc"]),
+        )
+    except (KeyError, ValueError, TypeError):
+        return None
+
+
 class RedditAgent(BaseAgent):
     name = "reddit"
 
@@ -33,15 +53,9 @@ class RedditAgent(BaseAgent):
                 children = resp.json()["data"]["children"]
 
                 articles = [
-                    Article(
-                        title=child["data"]["title"],
-                        url=child["data"]["url"],
-                        source=self.name,
-                        score=child["data"].get("score"),
-                        published_at=datetime.fromtimestamp(child["data"]["created_utc"]),
-                    )
+                    article
                     for child in children
-                    if child["data"].get("url")
+                    if (article := _parse_child(child, self.name)) is not None
                 ]
 
         except Exception as e:

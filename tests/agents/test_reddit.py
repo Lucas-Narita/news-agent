@@ -49,6 +49,25 @@ async def test_reddit_sends_user_agent():
     assert route.calls[0].request.headers.get("user-agent", "").startswith("news-agent")
 
 
+async def test_reddit_skips_malformed_item():
+    good = _reddit_child(0)
+    bad = _reddit_child(1)
+    del bad["data"]["title"]  # one malformed item must not sink the whole source
+
+    with respx.mock:
+        respx.get(REDDIT_URL).mock(
+            return_value=httpx.Response(200, json={"data": {"children": [good, bad]}})
+        )
+
+        from news_agent.agents.reddit import RedditAgent
+
+        agent = RedditAgent()
+        result = await agent.fetch()
+
+    assert result.error is None
+    assert len(result.articles) == 1
+
+
 async def test_reddit_api_error():
     with respx.mock:
         respx.get(REDDIT_URL).mock(return_value=httpx.Response(503))

@@ -35,6 +35,23 @@ async def test_devto_happy_path():
     assert result.articles[0].summary == "Summary 0"
 
 
+async def test_devto_skips_malformed_item():
+    good = _devto_article(0)
+    bad = _devto_article(1)
+    del bad["title"]  # one malformed item must not sink the whole source
+
+    with respx.mock:
+        respx.get(DEVTO_URL).mock(return_value=httpx.Response(200, json=[good, bad]))
+
+        from news_agent.agents.devto import DevToAgent
+
+        agent = DevToAgent()
+        result = await agent.fetch()
+
+    assert result.error is None
+    assert len(result.articles) == 1
+
+
 async def test_devto_api_error():
     with respx.mock:
         respx.get(DEVTO_URL).mock(return_value=httpx.Response(503))

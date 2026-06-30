@@ -12,6 +12,23 @@ LIMIT = 10
 TOP_DAYS = 7
 
 
+def _parse_article(item: dict, source: str) -> Article | None:
+    """Build an Article from one Dev.to item, or None if the item is malformed."""
+    try:
+        if not item.get("url"):
+            return None
+        return Article(
+            title=item["title"],
+            url=item["url"],
+            source=source,
+            score=item.get("positive_reactions_count"),
+            summary=item.get("description"),
+            published_at=datetime.fromisoformat(item["published_at"].replace("Z", "+00:00")),
+        )
+    except (KeyError, ValueError, TypeError):
+        return None
+
+
 class DevToAgent(BaseAgent):
     name = "devto"
 
@@ -29,18 +46,9 @@ class DevToAgent(BaseAgent):
                 raw = resp.json()
 
                 articles = [
-                    Article(
-                        title=item["title"],
-                        url=item["url"],
-                        source=self.name,
-                        score=item.get("positive_reactions_count"),
-                        summary=item.get("description"),
-                        published_at=datetime.fromisoformat(
-                            item["published_at"].replace("Z", "+00:00")
-                        ),
-                    )
+                    article
                     for item in raw
-                    if item.get("url")
+                    if (article := _parse_article(item, self.name)) is not None
                 ]
 
         except Exception as e:

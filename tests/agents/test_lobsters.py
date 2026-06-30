@@ -53,6 +53,23 @@ async def test_lobsters_skips_stories_without_url():
     assert len(result.articles) == 1
 
 
+async def test_lobsters_skips_malformed_item():
+    good = _lobsters_story(0)
+    bad = _lobsters_story(1)
+    del bad["title"]  # one malformed item must not sink the whole source
+
+    with respx.mock:
+        respx.get(LOBSTERS_URL).mock(return_value=httpx.Response(200, json=[good, bad]))
+
+        from news_agent.agents.lobsters import LobstersAgent
+
+        agent = LobstersAgent()
+        result = await agent.fetch()
+
+    assert result.error is None
+    assert len(result.articles) == 1
+
+
 async def test_lobsters_api_error():
     with respx.mock:
         respx.get(LOBSTERS_URL).mock(return_value=httpx.Response(503))
