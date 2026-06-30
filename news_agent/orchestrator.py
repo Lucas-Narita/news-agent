@@ -5,6 +5,7 @@ from datetime import datetime
 from news_agent.agents.github import GitHubAgent
 from news_agent.agents.hackernews import HackerNewsAgent
 from news_agent.agents.newsapi import NewsAPIAgent
+from news_agent.agents.reddit import RedditAgent
 from news_agent.config import Settings
 from news_agent.llm.client import generate_narrative
 from news_agent.output.markdown import format_articles
@@ -17,6 +18,7 @@ _REGISTRY = {
     "hackernews": HackerNewsAgent,
     "github": GitHubAgent,
     "newsapi": NewsAPIAgent,
+    "reddit": RedditAgent,
 }
 
 
