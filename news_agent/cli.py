@@ -87,6 +87,7 @@ def resolve_sources(sources_flag: Optional[str], settings: Settings) -> list[str
         "github": True,
         "newsapi": settings.newsapi_key is not None,
         "reddit": True,
+        "devto": True,
     }
 
     return [s for s in requested if available.get(s, False)]
