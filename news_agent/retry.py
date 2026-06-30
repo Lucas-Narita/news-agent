@@ -9,6 +9,8 @@ from asyncio import sleep
 from collections.abc import Awaitable, Callable
 from typing import TypeVar
 
+import httpx
+
 T = TypeVar("T")
 
 
@@ -27,7 +29,11 @@ async def with_retry(
     for attempt in range(retries):
         try:
             return await operation()
-        except Exception:
+        except Exception as exc:
+            # 4xx responses are permanent (bad request, auth, not found, rate limit) —
+            # retrying only wastes time and can make rate limiting worse.
+            if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code < 500:
+                raise
             if attempt == retries - 1:
                 raise
             await sleep(base_delay * (2**attempt))

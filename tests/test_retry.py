@@ -1,5 +1,6 @@
 from unittest.mock import AsyncMock
 
+import httpx
 import pytest
 
 from news_agent.retry import with_retry
@@ -66,3 +67,46 @@ async def test_with_retry_raises_last_exception_after_exhausting(monkeypatch):
 
     with pytest.raises(ValueError, match="nope"):
         await with_retry(op, retries=2, base_delay=0.1)
+
+
+def _status_error(status_code: int) -> httpx.HTTPStatusError:
+    request = httpx.Request("GET", "https://example.com")
+    response = httpx.Response(status_code, request=request)
+    return httpx.HTTPStatusError("error", request=request, response=response)
+
+
+async def test_with_retry_does_not_retry_client_errors(monkeypatch):
+    """A 4xx is permanent — fail fast instead of retrying."""
+    sleep_mock = AsyncMock()
+    monkeypatch.setattr("news_agent.retry.sleep", sleep_mock)
+
+    calls = 0
+
+    async def op():
+        nonlocal calls
+        calls += 1
+        raise _status_error(403)
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await with_retry(op, retries=3, base_delay=0.5)
+
+    assert calls == 1  # no retry for a client error
+    sleep_mock.assert_not_awaited()
+
+
+async def test_with_retry_retries_server_errors(monkeypatch):
+    """A 5xx is worth retrying."""
+    sleep_mock = AsyncMock()
+    monkeypatch.setattr("news_agent.retry.sleep", sleep_mock)
+
+    calls = 0
+
+    async def op():
+        nonlocal calls
+        calls += 1
+        raise _status_error(503)
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await with_retry(op, retries=3, base_delay=0.5)
+
+    assert calls == 3  # retried up to the limit
