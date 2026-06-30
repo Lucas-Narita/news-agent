@@ -17,7 +17,9 @@ _REGISTRY = {
 }
 
 
-async def run_digest(sources: list[str], settings: Settings) -> DigestOutput:
+async def run_digest(
+    sources: list[str], settings: Settings, limit: int | None = None
+) -> DigestOutput:
     """Fetch every requested source in parallel, then narrate the survivors.
 
     Agents never raise — failures arrive as AgentResult.error and are simply skipped,
@@ -34,6 +36,8 @@ async def run_digest(sources: list[str], settings: Settings) -> DigestOutput:
             sources_used.append(result.source)
 
     articles = rank_by_score(deduplicate(articles))
+    if limit is not None:
+        articles = articles[:limit]
 
     if not articles:
         return DigestOutput(

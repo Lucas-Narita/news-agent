@@ -107,6 +107,18 @@ def test_run_writes_md_file_by_default(monkeypatch, tmp_path):
     assert "Top stories this hour." in md_files[0].read_text()
 
 
+def test_run_forwards_limit_to_orchestrator(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.delenv("NEWSAPI_KEY", raising=False)
+    from news_agent.cli import app
+
+    mock = AsyncMock(return_value=_mock_digest())
+    with patch("news_agent.cli.run_digest", new=mock):
+        result = runner.invoke(app, ["run", "--no-file", "--sources", "hackernews", "--limit", "5"])
+    assert result.exit_code == 0
+    assert mock.call_args.kwargs["limit"] == 5
+
+
 def test_version_flag_shows_version():
     from importlib.metadata import version
 

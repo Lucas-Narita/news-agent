@@ -96,6 +96,9 @@ def run(
         None, "--sources", help="Comma-separated: hackernews, github, newsapi"
     ),
     no_file: bool = typer.Option(False, "--no-file", help="Print to terminal only, skip .md file"),
+    limit: Optional[int] = typer.Option(
+        None, "--limit", help="Keep only the top N highest-ranked articles"
+    ),
 ):
     """Fetch tech news and generate a digest."""
     try:
@@ -113,7 +116,7 @@ def run(
     console.print(f"[bold]Fetching from:[/bold] {', '.join(active_sources)}")
 
     try:
-        digest = asyncio.run(run_digest(active_sources, settings))
+        digest = asyncio.run(run_digest(active_sources, settings, limit=limit))
     except NotImplementedError:
         console.print("[yellow]Orchestrator not yet implemented (Section 5).[/yellow]")
         raise typer.Exit(code=0)

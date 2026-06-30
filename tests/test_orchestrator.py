@@ -186,3 +186,30 @@ async def test_run_digest_deduplicates_and_ranks_before_narrating(monkeypatch):
     ranked = mock_llm.call_args.args[0]
     assert [a.score for a in ranked] == [99, 5]  # highest score first
     assert ranked[0].source == "github"  # the stronger copy of the shared URL won
+
+
+async def test_run_digest_applies_limit_to_top_ranked(monkeypatch):
+    """A limit keeps only the top-N ranked articles, trimming before the LLM."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.config import get_settings
+
+    settings = get_settings()
+
+    articles = [
+        Article(title=f"s{i}", url=f"https://example.com/{i}", source="hackernews", score=i)
+        for i in range(5)
+    ]
+    fetched = AgentResult(source="hackernews", articles=articles, fetched_at=datetime.now())
+
+    mock_llm = AsyncMock(return_value="# Digest")
+    with (
+        patch("news_agent.orchestrator.HackerNewsAgent.fetch", new=AsyncMock(return_value=fetched)),
+        patch("news_agent.orchestrator.generate_narrative", new=mock_llm),
+    ):
+        from news_agent.orchestrator import run_digest
+
+        result = await run_digest(["hackernews"], settings, limit=2)
+
+    assert result.total_articles == 2
+    ranked = mock_llm.call_args.args[0]
+    assert [a.score for a in ranked] == [4, 3]  # only the top 2 by score survive
