@@ -40,10 +40,17 @@ def test_output_dir_configurable(monkeypatch):
     assert s.output_dir == Path("/tmp/digests")
 
 
-def test_default_sources_all_three(monkeypatch):
+def test_default_sources_includes_all_registered(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     s = Settings()
-    assert s.default_sources == ["hackernews", "github", "newsapi"]
+    assert s.default_sources == [
+        "hackernews",
+        "github",
+        "newsapi",
+        "reddit",
+        "devto",
+        "lobsters",
+    ]
 
 
 def test_request_timeout_defaults_to_10(monkeypatch):
