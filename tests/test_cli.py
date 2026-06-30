@@ -119,6 +119,20 @@ def test_run_forwards_limit_to_orchestrator(monkeypatch):
     assert mock.call_args.kwargs["limit"] == 5
 
 
+def test_run_verbose_configures_logging(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.delenv("NEWSAPI_KEY", raising=False)
+    from news_agent.cli import app
+
+    with (
+        patch("news_agent.cli.run_digest", new=AsyncMock(return_value=_mock_digest())),
+        patch("news_agent.cli.configure_logging") as mock_cfg,
+    ):
+        result = runner.invoke(app, ["run", "--no-file", "--sources", "hackernews", "--verbose"])
+    assert result.exit_code == 0
+    mock_cfg.assert_called_once_with(verbose=True)
+
+
 def test_version_flag_shows_version():
     from importlib.metadata import version
 

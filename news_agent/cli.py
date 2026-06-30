@@ -9,6 +9,7 @@ from rich.console import Console
 from rich.table import Table
 
 from news_agent.config import Settings, get_settings
+from news_agent.logging_config import configure_logging
 from news_agent.orchestrator import run_digest
 from news_agent.output.console import render_digest
 
@@ -99,8 +100,10 @@ def run(
     limit: Optional[int] = typer.Option(
         None, "--limit", help="Keep only the top N highest-ranked articles"
     ),
+    verbose: bool = typer.Option(False, "--verbose", help="Show INFO-level logs"),
 ):
     """Fetch tech news and generate a digest."""
+    configure_logging(verbose=verbose)
     try:
         settings = get_settings()
     except ValidationError:
