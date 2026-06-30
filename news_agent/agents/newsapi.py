@@ -4,6 +4,7 @@ import httpx
 
 from news_agent.agents.base import BaseAgent
 from news_agent.config import get_settings
+from news_agent.retry import with_retry
 from news_agent.schemas.models import AgentResult, Article
 
 NEWSAPI_URL = "https://newsapi.org/v2/top-headlines"
@@ -25,13 +26,18 @@ class NewsAPIAgent(BaseAgent):
             )
 
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                resp = await client.get(
-                    NEWSAPI_URL,
-                    params={"category": "technology", "language": "en", "pageSize": LIMIT},
-                    headers={"X-Api-Key": settings.newsapi_key},
-                )
-                resp.raise_for_status()
+            async with httpx.AsyncClient(timeout=settings.request_timeout) as client:
+
+                async def _get():
+                    resp = await client.get(
+                        NEWSAPI_URL,
+                        params={"category": "technology", "language": "en", "pageSize": LIMIT},
+                        headers={"X-Api-Key": settings.newsapi_key},
+                    )
+                    resp.raise_for_status()
+                    return resp
+
+                resp = await with_retry(_get)
                 raw = resp.json().get("articles", [])
 
                 articles = [

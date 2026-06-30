@@ -24,3 +24,4 @@ class DigestOutput(BaseModel):
     sources_used: list[str]
     total_articles: int
     generated_at: datetime
+    articles: list[Article] = []

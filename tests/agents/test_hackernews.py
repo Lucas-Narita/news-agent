@@ -82,3 +82,22 @@ async def test_hackernews_api_error():
 
     assert result.error is not None
     assert result.articles == []
+
+
+async def test_hackernews_retries_on_transient_error():
+    """A 503 on the topstories call is retried and recovers on the second attempt."""
+    with respx.mock:
+        respx.get(f"{HN_BASE}/topstories.json").mock(
+            side_effect=[httpx.Response(503), httpx.Response(200, json=[1, 2, 3])]
+        )
+        respx.get(re.compile(rf"{re.escape(HN_BASE)}/item/\d+\.json")).mock(
+            side_effect=lambda req: httpx.Response(
+                200, json=_make_item(int(req.url.path.split("/")[-1].replace(".json", "")))
+            )
+        )
+
+        agent = HackerNewsAgent()
+        result = await agent.fetch()
+
+    assert result.error is None
+    assert len(result.articles) == 3

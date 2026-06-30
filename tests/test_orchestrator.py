@@ -6,7 +6,7 @@ from news_agent.schemas.models import AgentResult, Article
 
 def _ok_result(source: str, n: int = 3) -> AgentResult:
     articles = [
-        Article(title=f"{source} story {i}", url=f"https://example.com/{i}", source=source)
+        Article(title=f"{source} story {i}", url=f"https://example.com/{source}/{i}", source=source)
         for i in range(n)
     ]
     return AgentResult(source=source, articles=articles, fetched_at=datetime.now())
@@ -147,3 +147,119 @@ async def test_run_digest_llm_failure_falls_back_to_raw_list(monkeypatch):
     assert result.total_articles == 2
     assert result.sources_used == ["hackernews"]
     assert "hackernews story 0" in result.narrative
+
+
+async def test_run_digest_deduplicates_and_ranks_before_narrating(monkeypatch):
+    """Cross-source duplicates collapse and the survivors reach the LLM ranked."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.config import get_settings
+
+    settings = get_settings()
+
+    shared_url = "https://example.com/shared"
+    hn = AgentResult(
+        source="hackernews",
+        articles=[
+            Article(title="hn copy", url=shared_url, source="hackernews", score=10),
+            Article(title="hn unique", url="https://example.com/hn", source="hackernews", score=5),
+        ],
+        fetched_at=datetime.now(),
+    )
+    gh = AgentResult(
+        source="github",
+        articles=[Article(title="gh copy", url=shared_url, source="github", score=99)],
+        fetched_at=datetime.now(),
+    )
+
+    mock_llm = AsyncMock(return_value="# Digest")
+    with (
+        patch("news_agent.orchestrator.HackerNewsAgent.fetch", new=AsyncMock(return_value=hn)),
+        patch("news_agent.orchestrator.GitHubAgent.fetch", new=AsyncMock(return_value=gh)),
+        patch("news_agent.orchestrator.generate_narrative", new=mock_llm),
+    ):
+        from news_agent.orchestrator import run_digest
+
+        result = await run_digest(["hackernews", "github"], settings)
+
+    # 3 fetched, but the shared URL collapses to 1 -> 2 unique articles
+    assert result.total_articles == 2
+    ranked = mock_llm.call_args.args[0]
+    assert [a.score for a in ranked] == [99, 5]  # highest score first
+    assert ranked[0].source == "github"  # the stronger copy of the shared URL won
+
+
+async def test_run_digest_logs_warning_for_failed_source(monkeypatch, caplog):
+    """A failed source degrades gracefully but is logged, not silently swallowed."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.config import get_settings
+
+    settings = get_settings()
+
+    with (
+        patch(
+            "news_agent.orchestrator.HackerNewsAgent.fetch",
+            new=AsyncMock(return_value=_ok_result("hackernews")),
+        ),
+        patch(
+            "news_agent.orchestrator.GitHubAgent.fetch",
+            new=AsyncMock(return_value=_err_result("github")),
+        ),
+        patch("news_agent.orchestrator.generate_narrative", new=AsyncMock(return_value="# Digest")),
+    ):
+        from news_agent.orchestrator import run_digest
+
+        with caplog.at_level("WARNING"):
+            await run_digest(["hackernews", "github"], settings)
+
+    warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+    assert any("github" in r.getMessage() and "API failed" in r.getMessage() for r in warnings)
+
+
+async def test_run_digest_includes_ranked_articles_in_output(monkeypatch):
+    """The digest carries the structured articles, not just the narrative text."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.config import get_settings
+
+    settings = get_settings()
+
+    fetched = _ok_result("hackernews", n=3)
+    with (
+        patch(
+            "news_agent.orchestrator.HackerNewsAgent.fetch",
+            new=AsyncMock(return_value=fetched),
+        ),
+        patch("news_agent.orchestrator.generate_narrative", new=AsyncMock(return_value="# Digest")),
+    ):
+        from news_agent.orchestrator import run_digest
+
+        result = await run_digest(["hackernews"], settings)
+
+    assert len(result.articles) == 3
+    assert result.articles[0].source == "hackernews"
+
+
+async def test_run_digest_applies_limit_to_top_ranked(monkeypatch):
+    """A limit keeps only the top-N ranked articles, trimming before the LLM."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.config import get_settings
+
+    settings = get_settings()
+
+    articles = [
+        Article(title=f"s{i}", url=f"https://example.com/{i}", source="hackernews", score=i)
+        for i in range(5)
+    ]
+    fetched = AgentResult(source="hackernews", articles=articles, fetched_at=datetime.now())
+
+    mock_llm = AsyncMock(return_value="# Digest")
+    with (
+        patch("news_agent.orchestrator.HackerNewsAgent.fetch", new=AsyncMock(return_value=fetched)),
+        patch("news_agent.orchestrator.generate_narrative", new=mock_llm),
+    ):
+        from news_agent.orchestrator import run_digest
+
+        result = await run_digest(["hackernews"], settings, limit=2)
+
+    assert result.total_articles == 2
+    ranked = mock_llm.call_args.args[0]
+    assert [a.score for a in ranked] == [4, 3]  # only the top 2 by score survive

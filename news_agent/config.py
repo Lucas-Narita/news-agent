@@ -9,7 +9,15 @@ class Settings(BaseSettings):
     newsapi_key: str | None = None
     github_token: str | None = None
     output_dir: Path = Path("output")
-    default_sources: list[str] = ["hackernews", "github", "newsapi"]
+    default_sources: list[str] = [
+        "hackernews",
+        "github",
+        "newsapi",
+        "reddit",
+        "devto",
+        "lobsters",
+    ]
+    request_timeout: float = 10.0
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

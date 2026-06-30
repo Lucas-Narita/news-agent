@@ -4,6 +4,7 @@ import httpx
 
 from news_agent.agents.base import BaseAgent
 from news_agent.config import get_settings
+from news_agent.retry import with_retry
 from news_agent.schemas.models import AgentResult, Article
 
 GITHUB_API = "https://api.github.com/search/repositories"
@@ -22,18 +23,23 @@ class GitHubAgent(BaseAgent):
         )
 
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                resp = await client.get(
-                    GITHUB_API,
-                    params={
-                        "q": f"{LANGUAGES} created:>{since}",
-                        "sort": "stars",
-                        "order": "desc",
-                        "per_page": LIMIT,
-                    },
-                    headers=headers,
-                )
-                resp.raise_for_status()
+            async with httpx.AsyncClient(timeout=settings.request_timeout) as client:
+
+                async def _get():
+                    resp = await client.get(
+                        GITHUB_API,
+                        params={
+                            "q": f"{LANGUAGES} created:>{since}",
+                            "sort": "stars",
+                            "order": "desc",
+                            "per_page": LIMIT,
+                        },
+                        headers=headers,
+                    )
+                    resp.raise_for_status()
+                    return resp
+
+                resp = await with_retry(_get)
                 repos = resp.json()["items"]
 
                 articles = [

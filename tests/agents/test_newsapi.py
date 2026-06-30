@@ -108,3 +108,22 @@ async def test_newsapi_api_error(monkeypatch):
 
     assert result.error is not None
     assert result.articles == []
+
+
+async def test_newsapi_retries_on_transient_error(monkeypatch):
+    """A 503 on the first attempt is retried and recovers on the second."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.setenv("NEWSAPI_KEY", "news-key-test")
+
+    articles = [_make_article(i) for i in range(10)]
+
+    with respx.mock:
+        respx.get(NEWSAPI_URL).mock(side_effect=[httpx.Response(503), _newsapi_response(articles)])
+
+        from news_agent.agents.newsapi import NewsAPIAgent
+
+        agent = NewsAPIAgent()
+        result = await agent.fetch()
+
+    assert result.error is None
+    assert len(result.articles) == 10

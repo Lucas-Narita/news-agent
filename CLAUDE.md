@@ -13,7 +13,7 @@ Agent CLI que agrega notícias e tendências de tech em tempo real (HackerNews, 
 
 **Objetivo:** projeto de portfólio público para posicionamento como AI Agent Engineer.
 **Proprietário:** Lucas Narita
-**Status:** seções 1–8 implementadas e testadas — 53 testes (cobertura ≥80%), CI no GitHub Actions (lint + format + testes), LICENSE MIT. Pronto como peça de portfólio.
+**Status:** seções 1–8 implementadas e testadas, mais evoluções (6 fontes, dedupe/ranking, retry com backoff, timeout configurável, logging, `--limit`/`--verbose`/`--format json`) — 91 testes (cobertura ≥80%), CI no GitHub Actions (lint + format + testes), LICENSE MIT. Pronto como peça de portfólio.
 
 ---
 
@@ -179,7 +179,14 @@ Todas as seções de design foram implementadas e testadas:
 - [x] Seção 7: Output (markdown formatter + console rich)
 - [x] Seção 8: Testes + README
 
-**Qualidade:** 53 testes (mockados, sem rede), cobertura ≥80% com gate no pytest,
+**Evoluções pós-design (mantendo a arquitetura base):**
+
+- [x] Qualidade de dados: deduplicação por URL + ranking por score (`processing.py`) + flag `--limit`
+- [x] Resiliência: retry com backoff exponencial (`retry.py`), timeout configurável (`REQUEST_TIMEOUT`), logging estruturado (`logging_config.py`, `--verbose`)
+- [x] Fontes adicionais: Reddit, Dev.to, Lobsters (total de 6, todas via `BaseAgent`)
+- [x] Output composável: `--format json` (digest serializado, stdout limpo para pipe)
+
+**Qualidade:** 91 testes (mockados, sem rede), cobertura ≥80% com gate no pytest,
 CI no GitHub Actions (lint + format + testes em Python 3.11/3.12/3.13), LICENSE MIT.
 
 ---

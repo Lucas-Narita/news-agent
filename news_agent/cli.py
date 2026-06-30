@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime
+from enum import Enum
 from importlib.metadata import version
 from typing import Optional
 
@@ -9,14 +10,22 @@ from rich.console import Console
 from rich.table import Table
 
 from news_agent.config import Settings, get_settings
+from news_agent.logging_config import configure_logging
 from news_agent.orchestrator import run_digest
 from news_agent.output.console import render_digest
+from news_agent.output.json_output import format_json
 
 app = typer.Typer(help="news-agent: tech news digest powered by Claude.")
 config_app = typer.Typer(help="Configuration commands.")
 app.add_typer(config_app, name="config")
 
 console = Console()
+err_console = Console(stderr=True)  # diagnostics go to stderr, keeping stdout clean
+
+
+class OutputFormat(str, Enum):
+    markdown = "markdown"
+    json = "json"
 
 
 def _version_callback(value: bool) -> None:
@@ -85,6 +94,9 @@ def resolve_sources(sources_flag: Optional[str], settings: Settings) -> list[str
         "hackernews": True,
         "github": True,
         "newsapi": settings.newsapi_key is not None,
+        "reddit": True,
+        "devto": True,
+        "lobsters": True,
     }
 
     return [s for s in requested if available.get(s, False)]
@@ -96,8 +108,16 @@ def run(
         None, "--sources", help="Comma-separated: hackernews, github, newsapi"
     ),
     no_file: bool = typer.Option(False, "--no-file", help="Print to terminal only, skip .md file"),
+    limit: Optional[int] = typer.Option(
+        None, "--limit", help="Keep only the top N highest-ranked articles"
+    ),
+    verbose: bool = typer.Option(False, "--verbose", help="Show INFO-level logs"),
+    output_format: OutputFormat = typer.Option(
+        OutputFormat.markdown, "--format", help="Output format: markdown or json"
+    ),
 ):
     """Fetch tech news and generate a digest."""
+    configure_logging(verbose=verbose)
     try:
         settings = get_settings()
     except ValidationError:
@@ -110,22 +130,25 @@ def run(
         console.print("[red]No sources available. Check your API keys.[/red]")
         raise typer.Exit(code=1)
 
-    console.print(f"[bold]Fetching from:[/bold] {', '.join(active_sources)}")
+    err_console.print(f"[bold]Fetching from:[/bold] {', '.join(active_sources)}")
 
     try:
-        digest = asyncio.run(run_digest(active_sources, settings))
-    except NotImplementedError:
-        console.print("[yellow]Orchestrator not yet implemented (Section 5).[/yellow]")
-        raise typer.Exit(code=0)
+        digest = asyncio.run(run_digest(active_sources, settings, limit=limit))
     except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
+        err_console.print(f"[red]Error: {e}[/red]")
         raise typer.Exit(code=1)
 
-    render_digest(digest, console)
+    if output_format is OutputFormat.json:
+        # stdout stays pure JSON so the digest can be piped into jq or another tool
+        content, extension = format_json(digest), "json"
+        typer.echo(content)
+    else:
+        render_digest(digest, console)
+        content, extension = digest.narrative, "md"
 
     if not no_file:
         settings.output_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now().strftime("%Y-%m-%d-%H")
-        output_path = settings.output_dir / f"digest-{timestamp}.md"
-        output_path.write_text(digest.narrative)
-        console.print(f"[dim]Saved to {output_path}[/dim]")
+        output_path = settings.output_dir / f"digest-{timestamp}.{extension}"
+        output_path.write_text(content)
+        err_console.print(f"[dim]Saved to {output_path}[/dim]")

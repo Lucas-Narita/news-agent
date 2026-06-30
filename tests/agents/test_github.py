@@ -98,3 +98,20 @@ async def test_github_network_timeout(monkeypatch):
 
     assert result.error is not None
     assert result.articles == []
+
+
+async def test_github_retries_on_transient_error(monkeypatch):
+    """A 503 on the first attempt is retried and recovers on the second."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+
+    with respx.mock:
+        respx.get(GITHUB_API).mock(side_effect=[httpx.Response(503), _github_response()])
+
+        from news_agent.agents.github import GitHubAgent
+
+        agent = GitHubAgent()
+        result = await agent.fetch()
+
+    assert result.error is None
+    assert len(result.articles) == 10

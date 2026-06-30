@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from unittest.mock import AsyncMock, patch
 
@@ -105,6 +106,47 @@ def test_run_writes_md_file_by_default(monkeypatch, tmp_path):
     md_files = list(tmp_path.glob("digest-*.md"))
     assert len(md_files) == 1
     assert "Top stories this hour." in md_files[0].read_text()
+
+
+def test_run_forwards_limit_to_orchestrator(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.delenv("NEWSAPI_KEY", raising=False)
+    from news_agent.cli import app
+
+    mock = AsyncMock(return_value=_mock_digest())
+    with patch("news_agent.cli.run_digest", new=mock):
+        result = runner.invoke(app, ["run", "--no-file", "--sources", "hackernews", "--limit", "5"])
+    assert result.exit_code == 0
+    assert mock.call_args.kwargs["limit"] == 5
+
+
+def test_run_verbose_configures_logging(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.delenv("NEWSAPI_KEY", raising=False)
+    from news_agent.cli import app
+
+    with (
+        patch("news_agent.cli.run_digest", new=AsyncMock(return_value=_mock_digest())),
+        patch("news_agent.cli.configure_logging") as mock_cfg,
+    ):
+        result = runner.invoke(app, ["run", "--no-file", "--sources", "hackernews", "--verbose"])
+    assert result.exit_code == 0
+    mock_cfg.assert_called_once_with(verbose=True)
+
+
+def test_run_format_json_outputs_pure_json(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.delenv("NEWSAPI_KEY", raising=False)
+    from news_agent.cli import app
+
+    with patch("news_agent.cli.run_digest", new=AsyncMock(return_value=_mock_digest())):
+        result = runner.invoke(
+            app, ["run", "--no-file", "--sources", "hackernews", "--format", "json"]
+        )
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)  # stdout must be pure JSON, no progress noise
+    assert data["narrative"] == "Top stories this hour."
+    assert data["total_articles"] == 3
 
 
 def test_version_flag_shows_version():
