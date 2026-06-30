@@ -1,3 +1,5 @@
+from unittest.mock import AsyncMock
+
 import pytest
 
 from news_agent.config import get_settings
@@ -12,3 +14,13 @@ def isolated_env(monkeypatch, tmp_path):
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def no_sleep(monkeypatch):
+    """Neutralize retry backoff so tests never actually sleep.
+
+    Tests in test_retry.py that assert on the backoff delays override this with
+    their own mock.
+    """
+    monkeypatch.setattr("news_agent.retry.sleep", AsyncMock())
