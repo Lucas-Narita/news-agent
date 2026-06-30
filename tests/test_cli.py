@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from unittest.mock import AsyncMock, patch
 
@@ -131,6 +132,21 @@ def test_run_verbose_configures_logging(monkeypatch):
         result = runner.invoke(app, ["run", "--no-file", "--sources", "hackernews", "--verbose"])
     assert result.exit_code == 0
     mock_cfg.assert_called_once_with(verbose=True)
+
+
+def test_run_format_json_outputs_pure_json(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.delenv("NEWSAPI_KEY", raising=False)
+    from news_agent.cli import app
+
+    with patch("news_agent.cli.run_digest", new=AsyncMock(return_value=_mock_digest())):
+        result = runner.invoke(
+            app, ["run", "--no-file", "--sources", "hackernews", "--format", "json"]
+        )
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)  # stdout must be pure JSON, no progress noise
+    assert data["narrative"] == "Top stories this hour."
+    assert data["total_articles"] == 3
 
 
 def test_version_flag_shows_version():
