@@ -72,4 +72,5 @@ async def run_digest(
         sources_used=sources_used,
         total_articles=len(articles),
         generated_at=datetime.now(),
+        articles=articles,
     )

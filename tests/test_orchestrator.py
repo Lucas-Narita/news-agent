@@ -215,6 +215,29 @@ async def test_run_digest_logs_warning_for_failed_source(monkeypatch, caplog):
     assert any("github" in r.getMessage() and "API failed" in r.getMessage() for r in warnings)
 
 
+async def test_run_digest_includes_ranked_articles_in_output(monkeypatch):
+    """The digest carries the structured articles, not just the narrative text."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.config import get_settings
+
+    settings = get_settings()
+
+    fetched = _ok_result("hackernews", n=3)
+    with (
+        patch(
+            "news_agent.orchestrator.HackerNewsAgent.fetch",
+            new=AsyncMock(return_value=fetched),
+        ),
+        patch("news_agent.orchestrator.generate_narrative", new=AsyncMock(return_value="# Digest")),
+    ):
+        from news_agent.orchestrator import run_digest
+
+        result = await run_digest(["hackernews"], settings)
+
+    assert len(result.articles) == 3
+    assert result.articles[0].source == "hackernews"
+
+
 async def test_run_digest_applies_limit_to_top_ranked(monkeypatch):
     """A limit keeps only the top-N ranked articles, trimming before the LLM."""
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
