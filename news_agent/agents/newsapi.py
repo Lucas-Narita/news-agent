@@ -25,7 +25,7 @@ class NewsAPIAgent(BaseAgent):
             )
 
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
+            async with httpx.AsyncClient(timeout=settings.request_timeout) as client:
                 resp = await client.get(
                     NEWSAPI_URL,
                     params={"category": "technology", "language": "en", "pageSize": LIMIT},

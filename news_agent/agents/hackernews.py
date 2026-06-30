@@ -4,6 +4,7 @@ from datetime import datetime
 import httpx
 
 from news_agent.agents.base import BaseAgent
+from news_agent.config import get_settings
 from news_agent.schemas.models import AgentResult, Article
 
 HN_BASE = "https://hacker-news.firebaseio.com/v0"
@@ -14,8 +15,9 @@ class HackerNewsAgent(BaseAgent):
     name = "hackernews"
 
     async def fetch(self) -> AgentResult:
+        settings = get_settings()
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
+            async with httpx.AsyncClient(timeout=settings.request_timeout) as client:
                 resp = await client.get(f"{HN_BASE}/topstories.json")
                 resp.raise_for_status()
                 ids = resp.json()[:LIMIT]
