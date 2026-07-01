@@ -29,7 +29,14 @@ jobs:
         run: |
           mkdir -p web/public data/digests
           news-agent run --format json --no-file > web/public/latest.json
-          python -c "import json; json.load(open('web/public/latest.json'))"
+          python -c "
+          import json
+          from news_agent.schemas.models import DigestOutput
+          data = json.load(open('web/public/latest.json'))
+          DigestOutput.model_validate(data)  # full schema: types, tz-aware datetimes, roster
+          assert all(a['url'].startswith(('http://','https://')) for a in data['articles']), 'non-http(s) article url'
+          print('latest.json validated against DigestOutput contract')
+          "
           cp web/public/latest.json "data/digests/digest-$(date -u +%F).json"
       - name: Commit and push
         run: |
