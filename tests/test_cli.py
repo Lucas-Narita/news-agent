@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime
 from unittest.mock import AsyncMock, patch
 
@@ -147,6 +148,36 @@ def test_run_format_json_outputs_pure_json(monkeypatch):
     data = json.loads(result.stdout)  # stdout must be pure JSON, no progress noise
     assert data["narrative"] == "Top stories this hour."
     assert data["total_articles"] == 3
+
+
+def test_run_json_stdout_pure_when_source_fails(monkeypatch):
+    """A failed source logs a WARNING; it must NOT leak into the JSON on stdout."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.delenv("NEWSAPI_KEY", raising=False)
+    logging.getLogger("news_agent").handlers.clear()  # force the stderr handler to attach
+
+    from news_agent.cli import app
+    from news_agent.schemas.models import AgentResult, Article
+
+    ok = AgentResult(
+        source="hackernews",
+        articles=[Article(title="t", url="https://example.com/a", source="hackernews")],
+        fetched_at=datetime.now(),
+    )
+    err = AgentResult(source="github", articles=[], fetched_at=datetime.now(), error="boom")
+
+    isolated = CliRunner()
+    with (
+        patch("news_agent.orchestrator.HackerNewsAgent.fetch", new=AsyncMock(return_value=ok)),
+        patch("news_agent.orchestrator.GitHubAgent.fetch", new=AsyncMock(return_value=err)),
+        patch("news_agent.orchestrator.generate_narrative", new=AsyncMock(return_value="# D")),
+    ):
+        result = isolated.invoke(
+            app, ["run", "--no-file", "--sources", "hackernews,github", "--format", "json"]
+        )
+
+    assert result.exit_code == 0
+    json.loads(result.stdout)  # raises if the WARNING leaked into stdout
 
 
 def test_version_flag_shows_version():
