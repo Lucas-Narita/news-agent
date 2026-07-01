@@ -16,7 +16,7 @@ export function DigestView({ digest }: { digest: Digest | null }) {
 
       {digest === null ? (
         <p className="text-lg text-ink/70">
-          Nenhum digest ainda — o agent roda diariamente às 04:00 UTC.
+          No digest yet — the agent runs daily at 04:00 UTC.
         </p>
       ) : (
         <div className="grid gap-4 lg:grid-cols-3">

@@ -29,7 +29,7 @@ describe("DigestView", () => {
   it("renders an empty state when digest is null", () => {
     render(<DigestView digest={null} />);
     expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
-    expect(screen.getByText(/nenhum digest ainda/i)).toBeInTheDocument();
+    expect(screen.getByText(/no digest yet/i)).toBeInTheDocument();
   });
 
   it("renders exactly one h1 when populated, with meta and agents wired", () => {
