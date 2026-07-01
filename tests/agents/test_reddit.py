@@ -81,6 +81,18 @@ async def test_reddit_api_error():
     assert result.articles == []
 
 
+async def test_reddit_published_at_is_timezone_aware():
+    with respx.mock:
+        respx.get(REDDIT_URL).mock(return_value=_reddit_response(1))
+
+        from news_agent.agents.reddit import RedditAgent
+
+        agent = RedditAgent()
+        result = await agent.fetch()
+
+    assert result.articles[0].published_at.tzinfo is not None
+
+
 async def test_reddit_retries_on_transient_error():
     with respx.mock:
         respx.get(REDDIT_URL).mock(side_effect=[httpx.Response(503), _reddit_response(3)])

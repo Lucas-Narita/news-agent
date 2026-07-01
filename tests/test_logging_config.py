@@ -34,3 +34,12 @@ def test_configure_logging_is_idempotent():
     configure_logging()
 
     assert len(logger.handlers) == 1  # repeated calls do not stack handlers
+
+
+def test_configure_logging_writes_to_stderr():
+    logger = logging.getLogger("news_agent")
+    logger.handlers.clear()  # handler is only attached when none exist
+    configure_logging()
+    handler = logger.handlers[0]
+    assert handler.console.stderr is True  # RichHandler must target stderr, not stdout
+    logger.handlers.clear()

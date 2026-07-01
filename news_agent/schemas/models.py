@@ -19,9 +19,16 @@ class AgentResult(BaseModel):
     error: str | None = None
 
 
+class AgentStatus(BaseModel):
+    name: str
+    ok: bool
+    article_count: int
+
+
 class DigestOutput(BaseModel):
     narrative: str
     sources_used: list[str]
     total_articles: int
     generated_at: datetime
     articles: list[Article] = []
+    agents: list[AgentStatus] = []

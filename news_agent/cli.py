@@ -121,13 +121,15 @@ def run(
     try:
         settings = get_settings()
     except ValidationError:
-        console.print("[red]Configuration error. Run 'news-agent config check' for details.[/red]")
+        err_console.print(
+            "[red]Configuration error. Run 'news-agent config check' for details.[/red]"
+        )
         raise typer.Exit(code=1)
 
     active_sources = resolve_sources(sources, settings)
 
     if not active_sources:
-        console.print("[red]No sources available. Check your API keys.[/red]")
+        err_console.print("[red]No sources available. Check your API keys.[/red]")
         raise typer.Exit(code=1)
 
     err_console.print(f"[bold]Fetching from:[/bold] {', '.join(active_sources)}")

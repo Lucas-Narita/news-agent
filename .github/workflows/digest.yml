@@ -1,0 +1,54 @@
+name: Generate digest
+
+on:
+  schedule:
+    - cron: "0 4 * * *"   # 04:00 UTC daily
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: digest
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - name: Generate and validate JSON
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p web/public data/digests
+          news-agent run --format json --no-file > web/public/latest.json
+          python -c "
+          import json
+          from news_agent.schemas.models import DigestOutput
+          data = json.load(open('web/public/latest.json'))
+          DigestOutput.model_validate(data)  # full schema: types, tz-aware datetimes, roster
+          assert all(a['url'].startswith(('http://','https://')) for a in data['articles']), 'non-http(s) article url'
+          print('latest.json validated against DigestOutput contract')
+          "
+          cp web/public/latest.json "data/digests/digest-$(date -u +%F).json"
+      - name: Commit and push
+        run: |
+          git config user.name  "news-agent-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add web/public/latest.json data/digests/
+          if git diff --cached --quiet; then
+            echo "No changes"; exit 0
+          fi
+          git commit -m "chore: update digest $(date -u +%F)"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin "${GITHUB_REF_NAME}" && git push && exit 0
+            sleep 5
+          done
+          echo "push failed after retries"; exit 1

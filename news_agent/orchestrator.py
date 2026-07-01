@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from news_agent.agents.devto import DevToAgent
 from news_agent.agents.github import GitHubAgent
@@ -12,7 +12,7 @@ from news_agent.config import Settings
 from news_agent.llm.client import generate_narrative
 from news_agent.output.markdown import format_articles
 from news_agent.processing import deduplicate, rank_by_score
-from news_agent.schemas.models import Article, DigestOutput
+from news_agent.schemas.models import AgentStatus, Article, DigestOutput
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,15 @@ async def run_digest(
 
     articles: list[Article] = []
     sources_used: list[str] = []
+    roster: list[AgentStatus] = []
     for result in results:
+        roster.append(
+            AgentStatus(
+                name=result.source,
+                ok=result.error is None,
+                article_count=len(result.articles),
+            )
+        )
         if result.error is None:
             articles.extend(result.articles)
             sources_used.append(result.source)
@@ -55,7 +63,8 @@ async def run_digest(
             narrative="No articles available. All sources failed or returned no results.",
             sources_used=[],
             total_articles=0,
-            generated_at=datetime.now(),
+            generated_at=datetime.now(timezone.utc),
+            agents=roster,
         )
 
     try:
@@ -71,6 +80,7 @@ async def run_digest(
         narrative=narrative,
         sources_used=sources_used,
         total_articles=len(articles),
-        generated_at=datetime.now(),
+        generated_at=datetime.now(timezone.utc),
         articles=articles,
+        agents=roster,
     )
