@@ -84,6 +84,16 @@ async def test_hackernews_api_error():
     assert result.articles == []
 
 
+async def test_hackernews_published_at_is_timezone_aware():
+    with respx.mock:
+        respx.get(f"{HN_BASE}/topstories.json").mock(return_value=httpx.Response(200, json=[1]))
+        respx.get(re.compile(rf"{re.escape(HN_BASE)}/item/\d+\.json")).mock(
+            return_value=httpx.Response(200, json=_make_item(1))
+        )
+        result = await HackerNewsAgent().fetch()
+    assert result.articles[0].published_at.tzinfo is not None
+
+
 async def test_hackernews_retries_on_transient_error():
     """A 503 on the topstories call is retried and recovers on the second attempt."""
     with respx.mock:

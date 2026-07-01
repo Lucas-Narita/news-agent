@@ -238,6 +238,25 @@ async def test_run_digest_includes_ranked_articles_in_output(monkeypatch):
     assert result.articles[0].source == "hackernews"
 
 
+async def test_run_digest_generated_at_is_timezone_aware(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.config import get_settings
+
+    settings = get_settings()
+    with (
+        patch(
+            "news_agent.orchestrator.HackerNewsAgent.fetch",
+            new=AsyncMock(return_value=_ok_result("hackernews")),
+        ),
+        patch("news_agent.orchestrator.generate_narrative", new=AsyncMock(return_value="# D")),
+    ):
+        from news_agent.orchestrator import run_digest
+
+        result = await run_digest(["hackernews"], settings)
+
+    assert result.generated_at.tzinfo is not None
+
+
 async def test_run_digest_applies_limit_to_top_ranked(monkeypatch):
     """A limit keeps only the top-N ranked articles, trimming before the LLM."""
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")

@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from news_agent.agents.devto import DevToAgent
 from news_agent.agents.github import GitHubAgent
@@ -55,7 +55,7 @@ async def run_digest(
             narrative="No articles available. All sources failed or returned no results.",
             sources_used=[],
             total_articles=0,
-            generated_at=datetime.now(),
+            generated_at=datetime.now(timezone.utc),
         )
 
     try:
@@ -71,6 +71,6 @@ async def run_digest(
         narrative=narrative,
         sources_used=sources_used,
         total_articles=len(articles),
-        generated_at=datetime.now(),
+        generated_at=datetime.now(timezone.utc),
         articles=articles,
     )

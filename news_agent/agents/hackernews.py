@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 
 import httpx
 
@@ -44,7 +44,7 @@ class HackerNewsAgent(BaseAgent):
                         url=item["url"],
                         source=self.name,
                         score=item.get("score"),
-                        published_at=datetime.fromtimestamp(item["time"]),
+                        published_at=datetime.fromtimestamp(item["time"], tz=timezone.utc),
                     )
                     for item in items
                     if item and item.get("url")
