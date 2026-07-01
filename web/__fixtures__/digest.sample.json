@@ -2,9 +2,10 @@
   "narrative": "# Tech Digest\n\nA sample narrative with **markdown**.",
   "sources_used": [
     "hackernews",
-    "devto"
+    "devto",
+    "lobsters"
   ],
-  "total_articles": 2,
+  "total_articles": 3,
   "generated_at": "2026-07-01T04:00:00Z",
   "articles": [
     {
@@ -22,6 +23,14 @@
       "score": 210,
       "published_at": "2026-06-29T09:30:00Z",
       "summary": "A short description."
+    },
+    {
+      "title": "Why static site generators still matter",
+      "url": "https://lobste.rs/s/ab12cd/why_static_site_generators_still_matter",
+      "source": "lobsters",
+      "score": null,
+      "published_at": "2026-06-30T21:30:00-06:00",
+      "summary": "A community discussion on keeping build tooling simple."
     }
   ],
   "agents": [
@@ -32,6 +41,11 @@
     },
     {
       "name": "devto",
+      "ok": true,
+      "article_count": 1
+    },
+    {
+      "name": "lobsters",
       "ok": true,
       "article_count": 1
     },

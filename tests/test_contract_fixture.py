@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from news_agent.schemas.models import AgentStatus, Article, DigestOutput
@@ -10,8 +10,8 @@ FIXTURE = Path(__file__).resolve().parents[1] / "web" / "__fixtures__" / "digest
 def _canonical_digest() -> DigestOutput:
     return DigestOutput(
         narrative="# Tech Digest\n\nA sample narrative with **markdown**.",
-        sources_used=["hackernews", "devto"],
-        total_articles=2,
+        sources_used=["hackernews", "devto", "lobsters"],
+        total_articles=3,
         generated_at=datetime(2026, 7, 1, 4, 0, tzinfo=timezone.utc),
         articles=[
             Article(
@@ -30,10 +30,19 @@ def _canonical_digest() -> DigestOutput:
                 published_at=datetime(2026, 6, 29, 9, 30, tzinfo=timezone.utc),
                 summary="A short description.",
             ),
+            Article(
+                title="Why static site generators still matter",
+                url="https://lobste.rs/s/ab12cd/why_static_site_generators_still_matter",
+                source="lobsters",
+                score=None,
+                published_at=datetime(2026, 6, 30, 21, 30, tzinfo=timezone(timedelta(hours=-6))),
+                summary="A community discussion on keeping build tooling simple.",
+            ),
         ],
         agents=[
             AgentStatus(name="hackernews", ok=True, article_count=1),
             AgentStatus(name="devto", ok=True, article_count=1),
+            AgentStatus(name="lobsters", ok=True, article_count=1),
             AgentStatus(name="github", ok=False, article_count=0),
         ],
     )
