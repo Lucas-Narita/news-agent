@@ -257,6 +257,34 @@ async def test_run_digest_generated_at_is_timezone_aware(monkeypatch):
     assert result.generated_at.tzinfo is not None
 
 
+async def test_run_digest_reports_agent_roster(monkeypatch):
+    """agents[] carries one status per attempted source, ok reflecting success."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.config import get_settings
+
+    settings = get_settings()
+    with (
+        patch(
+            "news_agent.orchestrator.HackerNewsAgent.fetch",
+            new=AsyncMock(return_value=_ok_result("hackernews", n=2)),
+        ),
+        patch(
+            "news_agent.orchestrator.GitHubAgent.fetch",
+            new=AsyncMock(return_value=_err_result("github")),
+        ),
+        patch("news_agent.orchestrator.generate_narrative", new=AsyncMock(return_value="# D")),
+    ):
+        from news_agent.orchestrator import run_digest
+
+        result = await run_digest(["hackernews", "github"], settings)
+
+    roster = {a.name: a for a in result.agents}
+    assert roster["hackernews"].ok is True
+    assert roster["hackernews"].article_count == 2
+    assert roster["github"].ok is False
+    assert roster["github"].article_count == 0
+
+
 async def test_run_digest_applies_limit_to_top_ranked(monkeypatch):
     """A limit keeps only the top-N ranked articles, trimming before the LLM."""
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
