@@ -8,7 +8,7 @@ export function DigestView({ digest }: { digest: Digest | null }) {
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
       <header className="mb-8">
-        <p className="font-display text-xs font-black uppercase tracking-widest text-ink/60">
+        <p className="font-display text-xs font-black uppercase tracking-widest text-ink/70">
           Daily Tech Digest
         </p>
         <h1 className="font-display text-4xl font-black text-ink sm:text-6xl">news-agent</h1>

@@ -15,5 +15,8 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
+    // Playwright owns e2e/**; vitest's default glob would otherwise pick up
+    // home.spec.ts and crash trying to run Playwright's test() outside its runner.
+    exclude: ["node_modules/**", "e2e/**"],
   },
 });

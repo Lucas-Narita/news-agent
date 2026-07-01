@@ -11,9 +11,13 @@ export function AgentsBlock({ agents }: { agents: Digest["agents"] }) {
       <ul className="mt-2 space-y-1 text-sm text-white">
         {agents.map((a) => (
           <li key={a.name}>
-            <span className={a.ok ? "text-[var(--color-accent)]" : "text-white/50"}>
+            <span
+              aria-hidden="true"
+              className={a.ok ? "text-[var(--color-accent)]" : "text-white/50"}
+            >
               {a.ok ? "✓" : "✗"}
-            </span>{" "}
+            </span>
+            <span className="sr-only">{a.ok ? "OK" : "Failed"}</span>{" "}
             {a.name} · {a.article_count}
           </li>
         ))}
