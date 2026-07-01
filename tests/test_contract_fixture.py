@@ -39,15 +39,48 @@ def _canonical_digest() -> DigestOutput:
     )
 
 
-def test_contract_fixture_is_current():
-    """Regenerate the fixture and fail if it drifts from what's committed.
+def _expected_fixture_text() -> str:
+    """Canonical JSON the committed fixture must match, trailing newline included."""
+    return _canonical_digest().model_dump_json(indent=2) + "\n"
 
-    Run `pytest -k contract_fixture` after any schema change, then commit the
-    updated file. The frontend (Plan B) parses THIS exact file with Zod.
+
+def regenerate_fixture() -> None:
+    """Deliberately refresh the committed fixture from the canonical schema.
+
+    This is the ONLY sanctioned way to change the fixture. Run it explicitly
+    after an intentional schema change:
+
+        python tests/test_contract_fixture.py
+
+    then review the diff and commit the updated file. It is never invoked by
+    the default `pytest` run, so drift can't be laundered into a green test.
     """
-    expected = _canonical_digest().model_dump_json(indent=2)
     FIXTURE.parent.mkdir(parents=True, exist_ok=True)
-    if not FIXTURE.exists() or FIXTURE.read_text() != expected:
-        FIXTURE.write_text(expected)
-    assert FIXTURE.read_text() == expected
-    DigestOutput.model_validate(json.loads(FIXTURE.read_text()))  # round-trips through the schema
+    FIXTURE.write_text(_expected_fixture_text())
+    print(f"Regenerated {FIXTURE}")
+
+
+def test_contract_fixture_is_current():
+    """Fail if the committed fixture drifts from the DigestOutput schema.
+
+    The frontend (Plan B) parses THIS exact file with Zod, so it must never
+    silently diverge from the schema. If this test fails, either the schema
+    change was intentional (run `python tests/test_contract_fixture.py` to
+    regenerate the fixture, review the diff, and commit it) or it was not
+    (fix the schema/serialization instead).
+    """
+    original = FIXTURE.read_text() if FIXTURE.exists() else None
+    expected = _expected_fixture_text()
+
+    assert original == expected, (
+        "web/__fixtures__/digest.sample.json has drifted from the DigestOutput "
+        "schema. Run `python tests/test_contract_fixture.py` to regenerate it, "
+        "review the diff, then commit the updated fixture."
+    )
+
+    # Round-trip through the schema to guarantee the fixture is still valid input.
+    DigestOutput.model_validate(json.loads(original))
+
+
+if __name__ == "__main__":
+    regenerate_fixture()
