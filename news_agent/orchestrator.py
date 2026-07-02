@@ -70,6 +70,7 @@ async def run_digest(
     try:
         narrative = await generate_narrative(articles, settings)
     except Exception:
+        logger.exception("narrative generation failed; falling back to raw list")
         narrative = (
             "# Tech Digest\n\n"
             "_Narrative generation failed — showing the raw curated list below._\n\n"
