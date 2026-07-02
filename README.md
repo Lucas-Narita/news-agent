@@ -60,6 +60,33 @@ class BaseAgent(ABC):
 
 ---
 
+## Web frontend & daily digest
+
+The digest also ships as a **static web page**. A scheduled GitHub Action runs the CLI in JSON mode,
+and a [Next.js 16](web/) frontend prerenders that JSON at build time — no server, no runtime LLM
+calls, nothing to pay for.
+
+```
+digest.yml (daily · GitHub Actions)              web/ (Next.js 16 · static)
+    news-agent run --format json                     prerender from latest.json
+             │                                                  ▲
+             └──►  web/public/latest.json (committed) ──────────┘
+                             │
+                             └──►  Vercel rebuild on each commit  ──►  CDN
+```
+
+- **Static by design** — the page builds to `○ (Static)`, a plain CDN document, so it stays free and
+  has no cold starts.
+- **One contract across the stack** — the frontend validates `latest.json` against a zod schema that
+  mirrors the backend `DigestOutput` Pydantic model, and a drift fixture test freezes that contract.
+- **Free daily refresh** — each Action commit to `latest.json` triggers a fresh Vercel build, so the
+  page updates without a server.
+
+Frontend details: [`web/README.md`](web/README.md). Deploy steps (including the required
+Root Directory = `web`): [`DEPLOY.md`](DEPLOY.md).
+
+---
+
 ## Setup
 
 Requires **Python 3.11+** and an [Anthropic API key](https://console.anthropic.com/).
