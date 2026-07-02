@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# news-agent · web
 
-## Getting Started
+Static [Next.js 16](https://nextjs.org) (App Router) frontend for the **news-agent** daily tech
+digest. The page is **prerendered at build time** from `public/latest.json` — the same
+`DigestOutput` JSON the CLI emits — so the live site is a plain CDN-served static document with no
+runtime API or LLM calls.
 
-First, run the development server:
+## How the data gets here
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+news-agent run --format json  ─►  web/public/latest.json  ─►  next build (static)  ─►  CDN
+     (GitHub Action, daily)            (committed)            (Vercel, per commit)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- `lib/digest.ts` reads `public/latest.json` and validates it against a zod schema that mirrors the
+  backend's `DigestOutput` Pydantic contract. Invalid data fails the build; an absent file renders
+  the empty state instead of crashing.
+- `.github/workflows/digest.yml` regenerates and commits `latest.json` daily; each commit triggers a
+  fresh Vercel build, so the static page stays current without a server.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Develop
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+npm run dev        # http://localhost:3000
+npm run build      # production build (static prerender)
+npm test           # Vitest unit tests
+npm run test:e2e   # Playwright E2E + axe a11y + responsive screenshots
+```
 
-## Learn More
+## Stack
 
-To learn more about Next.js, take a look at the following resources:
+Next.js 16 · React 19 · Tailwind CSS v4 · zod · react-markdown + rehype-sanitize · Vitest · Playwright
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deployed on **Vercel (Hobby / free)**. Because this app lives in a subdirectory of a Python-root
+repo, the Vercel project's **Root Directory must be set to `web`**, and no build-time environment
+variables are required. Full steps: [`../DEPLOY.md`](../DEPLOY.md).
