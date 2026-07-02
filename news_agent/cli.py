@@ -64,11 +64,18 @@ def config_check():
     table.add_column("Status")
     table.add_column("Value")
 
-    table.add_row(
-        "ANTHROPIC_API_KEY",
-        "[green]OK[/green]",
-        "***" + settings.anthropic_api_key[-4:],
-    )
+    if settings.anthropic_api_key:
+        table.add_row(
+            "ANTHROPIC_API_KEY",
+            "[green]OK[/green]",
+            "***" + settings.anthropic_api_key[-4:],
+        )
+    else:
+        table.add_row(
+            "ANTHROPIC_API_KEY",
+            "[yellow]OPTIONAL[/yellow]",
+            "not set (LLM_PROVIDER=github)",
+        )
 
     if settings.newsapi_key:
         table.add_row("NEWSAPI_KEY", "[green]OK[/green]", "***" + settings.newsapi_key[-4:])

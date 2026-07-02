@@ -16,6 +16,23 @@ def _mock_response(text: str = "# Digest\nTop stories.") -> MagicMock:
     return response
 
 
+async def test_generate_narrative_dispatches_to_github_provider(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "github")
+    monkeypatch.setenv("GITHUB_TOKEN", "ghs_test")
+    from news_agent.config import get_settings
+
+    settings = get_settings()
+
+    mock_github = AsyncMock(return_value="# Digest via GitHub Models")
+    with patch("news_agent.llm.client.generate_narrative_github", new=mock_github):
+        from news_agent.llm.client import generate_narrative
+
+        result = await generate_narrative([_make_article()], settings)
+
+    assert result == "# Digest via GitHub Models"
+    mock_github.assert_awaited_once()
+
+
 async def test_generate_narrative_returns_text(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     from news_agent.config import get_settings

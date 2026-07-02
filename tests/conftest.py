@@ -11,6 +11,9 @@ def isolated_env(monkeypatch, tmp_path):
     # ANTHROPIC_API_KEY is required in production, so make it present by default.
     # Tests that assert on its absence call monkeypatch.delenv() themselves.
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    # Pin the provider to the anthropic default: a host shell exporting
+    # LLM_PROVIDER=github would otherwise leak into every test.
+    monkeypatch.delenv("LLM_PROVIDER", raising=False)
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()

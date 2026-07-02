@@ -104,9 +104,10 @@ cp .env.example .env
 
 | Variable | Required | Description |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | **Yes** | Claude API key — powers the digest narrative |
+| `LLM_PROVIDER` | No | Narrative provider: `anthropic` (default) or `github` ([GitHub Models](https://docs.github.com/en/github-models) free tier) |
+| `ANTHROPIC_API_KEY` | With `anthropic` | Claude API key — powers the digest narrative |
 | `NEWSAPI_KEY` | No | [NewsAPI](https://newsapi.org/) key — enables the `newsapi` source |
-| `GITHUB_TOKEN` | No | GitHub token — raises the rate limit from 60 to 5000 req/h |
+| `GITHUB_TOKEN` | With `github` | GitHub token — auths GitHub Models; also raises the GitHub source rate limit from 60 to 5000 req/h |
 | `REQUEST_TIMEOUT` | No | Per-request HTTP timeout in seconds (default `10`) |
 
 Hacker News, Reddit, Dev.to, and Lobsters need no credentials. `newsapi` auto-disables when its

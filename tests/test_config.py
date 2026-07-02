@@ -66,6 +66,36 @@ def test_request_timeout_configurable(monkeypatch):
     assert s.request_timeout == 3.5
 
 
+def test_llm_provider_defaults_to_anthropic(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.delenv("LLM_PROVIDER", raising=False)
+    s = Settings()
+    assert s.llm_provider == "anthropic"
+
+
+def test_github_provider_works_without_anthropic_key(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setenv("LLM_PROVIDER", "github")
+    monkeypatch.setenv("GITHUB_TOKEN", "ghp-test")
+    s = Settings()
+    assert s.llm_provider == "github"
+    assert s.anthropic_api_key is None
+
+
+def test_github_provider_requires_github_token(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "github")
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    with pytest.raises(ValidationError):
+        Settings()
+
+
+def test_invalid_llm_provider_rejected(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.setenv("LLM_PROVIDER", "openai")
+    with pytest.raises(ValidationError):
+        Settings()
+
+
 def test_get_settings_is_cached(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     s1 = get_settings()

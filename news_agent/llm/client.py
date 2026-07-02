@@ -3,6 +3,7 @@ from datetime import date
 import anthropic
 
 from news_agent.config import Settings
+from news_agent.llm.github_models import generate_narrative_github
 from news_agent.llm.prompts import SYSTEM_PROMPT, build_user_message
 from news_agent.output.markdown import format_articles
 from news_agent.schemas.models import Article
@@ -12,6 +13,17 @@ MAX_TOKENS = 1024
 
 
 async def generate_narrative(articles: list[Article], settings: Settings) -> str:
+    """Route the narrative to the configured LLM provider.
+
+    The orchestrator never knows which provider runs underneath — adding one
+    means a new module plus a branch here, nothing upstream changes.
+    """
+    if settings.llm_provider == "github":
+        return await generate_narrative_github(articles, settings)
+    return await _generate_anthropic(articles, settings)
+
+
+async def _generate_anthropic(articles: list[Article], settings: Settings) -> str:
     """Call Claude to turn the curated articles into a Markdown digest.
 
     The large, fixed SYSTEM_PROMPT is sent as a cached (ephemeral) block so repeated

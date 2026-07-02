@@ -50,6 +50,20 @@ def test_config_check_missing_required(monkeypatch):
     assert result.exit_code == 1
 
 
+def test_config_check_github_provider_without_anthropic_key(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setenv("LLM_PROVIDER", "github")
+    monkeypatch.setenv("GITHUB_TOKEN", "ghp-test-9012")
+    from news_agent.cli import app
+
+    result = runner.invoke(app, ["config", "check"])
+    assert result.exit_code == 0
+    assert "ANTHROPIC_API_KEY" in result.output
+    # Row-specific text: a generic "OPTIONAL" would pass vacuously via the
+    # NEWSAPI_KEY row even if the ANTHROPIC_API_KEY branch regressed.
+    assert "LLM_PROVIDER=github" in result.output
+
+
 def test_resolve_sources_from_flag(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     monkeypatch.delenv("NEWSAPI_KEY", raising=False)

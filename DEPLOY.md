@@ -48,4 +48,5 @@ build — the static page updates with no server and no cost.
 
 > **First impression:** the committed seed `latest.json` uses placeholder article links. Right after
 > the first deploy, trigger one real run so visitors see live data:
-> `gh workflow run "Generate digest"` (requires `ANTHROPIC_API_KEY` in the repo's Actions secrets).
+> `gh workflow run "Generate digest"` (no secrets needed — the narrative runs on GitHub Models
+> via the workflow's built-in `GITHUB_TOKEN`; only the optional `NEWSAPI_KEY` is a repo secret).
