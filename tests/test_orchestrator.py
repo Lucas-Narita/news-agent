@@ -149,6 +149,33 @@ async def test_run_digest_llm_failure_falls_back_to_raw_list(monkeypatch):
     assert "hackernews story 0" in result.narrative
 
 
+async def test_run_digest_logs_exception_when_llm_fails(monkeypatch, caplog):
+    """The LLM fallback must log the underlying error, not swallow it silently."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.config import get_settings
+
+    settings = get_settings()
+
+    failing_llm = AsyncMock(side_effect=RuntimeError("API down"))
+    with (
+        patch(
+            "news_agent.orchestrator.HackerNewsAgent.fetch",
+            new=AsyncMock(return_value=_ok_result("hackernews", n=2)),
+        ),
+        patch("news_agent.orchestrator.generate_narrative", new=failing_llm),
+    ):
+        from news_agent.orchestrator import run_digest
+
+        with caplog.at_level("ERROR"):
+            await run_digest(["hackernews"], settings)
+
+    errors = [r for r in caplog.records if r.levelname == "ERROR"]
+    assert any(
+        "narrative generation failed" in r.getMessage() and "API down" in str(r.exc_info)
+        for r in errors
+    )
+
+
 async def test_run_digest_deduplicates_and_ranks_before_narrating(monkeypatch):
     """Cross-source duplicates collapse and the survivors reach the LLM ranked."""
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
