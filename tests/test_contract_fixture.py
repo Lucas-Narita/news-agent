@@ -9,7 +9,17 @@ FIXTURE = Path(__file__).resolve().parents[1] / "web" / "__fixtures__" / "digest
 
 def _canonical_digest() -> DigestOutput:
     return DigestOutput(
-        narrative="# Tech Digest\n\nA sample narrative with **markdown**.",
+        narrative=(
+            "The through-line today is **local-first software**. A Hacker News thread "
+            "on running models on-device reached the front page — part of a broader "
+            "shift away from always-connected architectures toward tools that work "
+            "offline by default.\n\n"
+            "On the systems side, Rust's push into the kernel kept its momentum, while "
+            "a Lobsters discussion made the case that static site generators still "
+            "cover most of what teams reach for heavier build tooling to do.\n\n"
+            "The common thread: developers are trading cloud dependence and complex "
+            "toolchains for simpler, self-contained setups."
+        ),
         sources_used=["hackernews", "devto", "lobsters"],
         total_articles=3,
         generated_at=datetime(2026, 7, 1, 4, 0, tzinfo=timezone.utc),

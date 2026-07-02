@@ -39,7 +39,10 @@ describe("DigestView", () => {
     expect(screen.getByRole("link", { name: "A" })).toBeInTheDocument();
     // MetaBlock wiring: total_articles must actually reach the DOM, not just
     // an empty/blank section if the prop got dropped or mis-wired.
-    expect(screen.getByText("1")).toBeInTheDocument();
+    // Scoped to the total figure's own element: HowItWorks also renders a
+    // step badge with text "1" ("Collect"), so a bare getByText("1") is
+    // ambiguous now that the page has more sections.
+    expect(screen.getByText("1", { selector: "div.text-4xl" })).toBeInTheDocument();
     // AgentsBlock wiring: the agent roster (name + article_count) must render,
     // not just an empty section.
     expect(screen.getByText(/hackernews · 1/)).toBeInTheDocument();

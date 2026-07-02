@@ -10,10 +10,10 @@ export function MetaBlock({ total, generatedAt }: { total: number; generatedAt: 
     timeZone: "UTC",
   });
   return (
-    <BrutalCard className="bg-surface p-4">
-      <div className="font-display text-2xl font-black text-ink">{total}</div>
-      <div className="text-xs uppercase tracking-wide text-ink/70">articles</div>
-      <div className="mt-2 text-xs text-ink/70">{when} UTC</div>
+    <BrutalCard className="bg-surface p-6">
+      <div className="font-display text-4xl font-black leading-none text-ink lg:text-5xl">{total}</div>
+      <div className="mt-2 text-xs uppercase tracking-wide text-ink/70">articles</div>
+      <div className="mt-3 text-xs text-ink/70">{when} UTC</div>
     </BrutalCard>
   );
 }
