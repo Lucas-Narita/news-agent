@@ -10,3 +10,7 @@ __pycache__/
 dist/
 *.egg-info/
 .superpowers/
+
+# Local validation artifacts (screenshots at repo root, Playwright MCP output)
+/*.png
+.playwright-mcp/
