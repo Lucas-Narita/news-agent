@@ -29,6 +29,11 @@ dependencies = [
     "rich>=13",
 ]
 
+[project.urls]
+Homepage = "https://github.com/Lucas-Narita/news-agent"
+Repository = "https://github.com/Lucas-Narita/news-agent"
+Issues = "https://github.com/Lucas-Narita/news-agent/issues"
+
 [project.scripts]
 news-agent = "news_agent.cli:app"
 
