@@ -49,6 +49,9 @@ dev = [
 [tool.setuptools.packages.find]
 include = ["news_agent*"]
 
+[tool.setuptools.package-data]
+news_agent = ["py.typed"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 addopts = "--cov=news_agent --cov-report=term-missing --cov-fail-under=80"
