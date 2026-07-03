@@ -139,6 +139,9 @@ news-agent config check
 Digests are written to `output/digest-YYYY-MM-DD-HH.{md,json}` by default. Progress messages go to
 **stderr**, so `--format json` produces a clean JSON stream on **stdout**.
 
+Exit code is `0` on success and `1` on configuration errors, no available sources, or an
+unrecoverable fetch/generation failure — useful for scripting (`news-agent run || alert-me`).
+
 ---
 
 ## Project layout
