@@ -105,7 +105,9 @@ def resolve_sources(sources_flag: Optional[str], settings: Settings) -> list[str
 @app.command()
 def run(
     sources: Optional[str] = typer.Option(
-        None, "--sources", help="Comma-separated: hackernews, github, newsapi"
+        None,
+        "--sources",
+        help="Comma-separated: hackernews, github, newsapi, reddit, devto, lobsters",
     ),
     no_file: bool = typer.Option(False, "--no-file", help="Print to terminal only, skip .md file"),
     limit: Optional[int] = typer.Option(
