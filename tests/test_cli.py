@@ -84,6 +84,16 @@ def test_resolve_sources_includes_newsapi_when_key_present(monkeypatch):
     assert "newsapi" in result
 
 
+def test_resolve_sources_drops_unknown_names(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.cli import resolve_sources
+    from news_agent.config import get_settings
+
+    settings = get_settings()
+    result = resolve_sources("hackernews,not-a-real-source", settings)
+    assert result == ["hackernews"]
+
+
 def test_run_no_file_prints_narrative(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     monkeypatch.delenv("NEWSAPI_KEY", raising=False)
