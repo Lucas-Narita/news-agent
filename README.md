@@ -27,7 +27,7 @@ the raw feed into a concise digest — rendered in the terminal, saved to disk, 
 | **Prompt caching** | The large, fixed system prompt is sent as a cached (`ephemeral`) block, so repeated runs only pay for the small, varying user message. |
 
 ---
-
+## oi
 ## Architecture
 
 ```
