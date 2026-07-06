@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from news_agent.config import Settings, get_settings
-## test 2
+
 
 def test_settings_requires_anthropic_key(monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)

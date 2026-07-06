@@ -18,7 +18,7 @@ from news_agent.output.json_output import format_json
 app = typer.Typer(help="news-agent: tech news digest powered by Claude.")
 config_app = typer.Typer(help="Configuration commands.")
 app.add_typer(config_app, name="config")
-## fix
+
 console = Console()
 err_console = Console(stderr=True)  # diagnostics go to stderr, keeping stdout clean
 
