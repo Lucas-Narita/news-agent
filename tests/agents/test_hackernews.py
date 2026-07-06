@@ -111,3 +111,29 @@ async def test_hackernews_retries_on_transient_error():
 
     assert result.error is None
     assert len(result.articles) == 3
+
+
+async def test_hackernews_skips_item_fetch_failure():
+    """If an individual item-detail fetch fails, skip that item but continue fetching others."""
+    with respx.mock:
+        respx.get(f"{HN_BASE}/topstories.json").mock(
+            return_value=httpx.Response(200, json=[1, 2, 3])
+        )
+
+        def item_side_effect(req):
+            item_id = int(req.url.path.split("/")[-1].replace(".json", ""))
+            if item_id == 2:
+                return httpx.Response(500)  # item 2 fetch fails
+            return httpx.Response(200, json=_make_item(item_id))
+
+        respx.get(re.compile(rf"{re.escape(HN_BASE)}/item/\d+\.json")).mock(
+            side_effect=item_side_effect
+        )
+
+        agent = HackerNewsAgent()
+        result = await agent.fetch()
+
+    assert result.error is None
+    assert len(result.articles) == 2
+    assert result.articles[0].title == "Story 1"
+    assert result.articles[1].title == "Story 3"
