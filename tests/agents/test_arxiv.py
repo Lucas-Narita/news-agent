@@ -1,7 +1,7 @@
 import httpx
 import respx
 
-ARXIV_URL = "http://export.arxiv.org/api/query"
+ARXIV_URL = "https://export.arxiv.org/api/query"
 
 
 def _entry_id(i: int) -> str:

@@ -1,6 +1,7 @@
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # Element type hint only; parsing goes through defusedxml
 from datetime import datetime
 
+import defusedxml.ElementTree as safe_ET
 import httpx
 
 from news_agent.agents.base import BaseAgent
@@ -8,7 +9,7 @@ from news_agent.config import get_settings
 from news_agent.retry import with_retry
 from news_agent.schemas.models import AgentResult, Article
 
-ARXIV_URL = "http://export.arxiv.org/api/query"
+ARXIV_URL = "https://export.arxiv.org/api/query"
 SEARCH_QUERY = "cat:cs.AI"
 MAX_RESULTS = 10
 
@@ -77,7 +78,7 @@ class ArxivAgent(BaseAgent):
                     return resp
 
                 resp = await with_retry(_get)
-                root = ET.fromstring(resp.text)
+                root = safe_ET.fromstring(resp.text)
                 entries = root.findall("atom:entry", ATOM_NS)
 
                 articles = [
