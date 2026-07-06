@@ -104,3 +104,23 @@ async def test_reddit_retries_on_transient_error():
 
     assert result.error is None
     assert len(result.articles) == 3
+
+
+async def test_reddit_skips_item_missing_url():
+    """Items without a url field must be skipped, not sink the whole source."""
+    good = _reddit_child(0)
+    bad = _reddit_child(1)
+    bad["data"]["url"] = None  # missing url
+
+    with respx.mock:
+        respx.get(REDDIT_URL).mock(
+            return_value=httpx.Response(200, json={"data": {"children": [good, bad]}})
+        )
+
+        from news_agent.agents.reddit import RedditAgent
+
+        agent = RedditAgent()
+        result = await agent.fetch()
+
+    assert result.error is None
+    assert len(result.articles) == 1
