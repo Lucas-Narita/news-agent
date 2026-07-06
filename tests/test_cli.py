@@ -199,3 +199,43 @@ def test_version_flag_shows_version():
     assert result.exit_code == 0
     assert "news-agent" in result.output
     assert version("news-agent") in result.output
+
+
+def test_run_config_validation_error(monkeypatch):
+    """When ANTHROPIC_API_KEY is missing, run command exits with code 1."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    from news_agent.cli import app
+    from news_agent.config import get_settings
+
+    get_settings.cache_clear()
+    result = runner.invoke(app, ["run", "--no-file", "--sources", "hackernews"])
+    get_settings.cache_clear()
+    assert result.exit_code == 1
+    assert "Configuration error" in result.output
+
+
+def test_run_no_active_sources(monkeypatch):
+    """When only unavailable sources are requested, exit with code 1."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.delenv("NEWSAPI_KEY", raising=False)
+    from news_agent.cli import app
+    from news_agent.config import get_settings
+
+    get_settings.cache_clear()
+    result = runner.invoke(app, ["run", "--no-file", "--sources", "newsapi"])
+    get_settings.cache_clear()
+    assert result.exit_code == 1
+    assert "No sources available" in result.output
+
+
+def test_run_digest_exception(monkeypatch):
+    """When run_digest raises an exception, exit with code 1."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.delenv("NEWSAPI_KEY", raising=False)
+    from news_agent.cli import app
+
+    with patch("news_agent.cli.run_digest", side_effect=RuntimeError("Test error")):
+        result = runner.invoke(app, ["run", "--no-file", "--sources", "hackernews"])
+
+    assert result.exit_code == 1
+    assert "Error:" in result.output
