@@ -76,3 +76,21 @@ async def test_devto_retries_on_transient_error():
 
     assert result.error is None
     assert len(result.articles) == 3
+
+
+async def test_devto_skips_item_missing_url():
+    """Items without a url field must be skipped, not sink the whole source."""
+    good = _devto_article(0)
+    bad = _devto_article(1)
+    bad["url"] = None  # missing url
+
+    with respx.mock:
+        respx.get(DEVTO_URL).mock(return_value=httpx.Response(200, json=[good, bad]))
+
+        from news_agent.agents.devto import DevToAgent
+
+        agent = DevToAgent()
+        result = await agent.fetch()
+
+    assert result.error is None
+    assert len(result.articles) == 1
