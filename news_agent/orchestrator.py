@@ -2,6 +2,7 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 
+from news_agent.agents.arxiv import ArxivAgent
 from news_agent.agents.devto import DevToAgent
 from news_agent.agents.github import GitHubAgent
 from news_agent.agents.hackernews import HackerNewsAgent
@@ -23,6 +24,7 @@ _REGISTRY = {
     "reddit": RedditAgent,
     "devto": DevToAgent,
     "lobsters": LobstersAgent,
+    "arxiv": ArxivAgent,
 }
 
 

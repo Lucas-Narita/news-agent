@@ -5,8 +5,9 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 
 A multi-agent CLI that aggregates tech news from **Hacker News**, **GitHub Trending**,
-**NewsAPI**, **Reddit**, **Dev.to**, and **Lobsters** in parallel, then uses **Claude** to turn
-the raw feed into a concise digest — rendered in the terminal, saved to disk, or emitted as JSON.
+**NewsAPI**, **Reddit**, **Dev.to**, **Lobsters**, and **arXiv** in parallel, then uses **Claude**
+to turn the raw feed into a concise digest — rendered in the terminal, saved to disk, or emitted
+as JSON.
 
 > Built as a focused demonstration of agent-oriented architecture: independent agents behind a
 > shared contract, real `asyncio` parallelism, graceful degradation, retry with backoff, and an
@@ -37,8 +38,9 @@ CLI (Typer)
        ├─► GitHubAgent       │
        ├─► NewsAPIAgent      ├─► asyncio.gather() → AgentResult[]
        ├─► RedditAgent       │        │
-       ├─► DevToAgent        │        ▼
-       └─► LobstersAgent    ─┘   dedupe + rank (processing.py)
+       ├─► DevToAgent        │        │
+       ├─► LobstersAgent     │        ▼
+       └─► ArxivAgent       ─┘   dedupe + rank (processing.py)
                                       │
                                       ▼
                           LLM Client (Claude · prompt caching)
@@ -109,8 +111,8 @@ cp .env.example .env
 | `GITHUB_TOKEN` | No | GitHub token — raises the rate limit from 60 to 5000 req/h |
 | `REQUEST_TIMEOUT` | No | Per-request HTTP timeout in seconds (default `10`) |
 
-Hacker News, Reddit, Dev.to, and Lobsters need no credentials. `newsapi` auto-disables when its
-key is missing instead of erroring.
+Hacker News, Reddit, Dev.to, Lobsters, and arXiv need no credentials. `newsapi` auto-disables
+when its key is missing instead of erroring.
 
 ---
 
@@ -154,7 +156,7 @@ news_agent/
 ├── processing.py      # pure dedupe + ranking helpers
 ├── retry.py           # generic async retry with exponential backoff
 ├── logging_config.py  # Rich-handler logging setup
-├── agents/            # BaseAgent ABC + 6 source agents
+├── agents/            # BaseAgent ABC + 7 source agents
 ├── schemas/           # Article, AgentResult, DigestOutput
 ├── llm/               # Claude client + prompt templates
 └── output/            # markdown / rich console / json renderers

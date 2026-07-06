@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- arXiv agent (`arxiv`) surfacing recent cs.AI papers — no API key required.
+
 ## [0.1.0]
 
 ### Added

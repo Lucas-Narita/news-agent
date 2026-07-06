@@ -16,6 +16,7 @@ class Settings(BaseSettings):
         "reddit",
         "devto",
         "lobsters",
+        "arxiv",
     ]
     request_timeout: float = 10.0
 

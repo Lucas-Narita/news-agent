@@ -50,6 +50,7 @@ def test_default_sources_includes_all_registered(monkeypatch):
         "reddit",
         "devto",
         "lobsters",
+        "arxiv",
     ]
 
 

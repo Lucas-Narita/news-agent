@@ -97,6 +97,7 @@ def resolve_sources(sources_flag: Optional[str], settings: Settings) -> list[str
         "reddit": True,
         "devto": True,
         "lobsters": True,
+        "arxiv": True,
     }
 
     return [s for s in requested if available.get(s, False)]
@@ -107,7 +108,7 @@ def run(
     sources: Optional[str] = typer.Option(
         None,
         "--sources",
-        help="Comma-separated: hackernews, github, newsapi, reddit, devto, lobsters",
+        help="Comma-separated: hackernews, github, newsapi, reddit, devto, lobsters, arxiv",
     ),
     no_file: bool = typer.Option(False, "--no-file", help="Print to terminal only, skip .md file"),
     limit: Optional[int] = typer.Option(
