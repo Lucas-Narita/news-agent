@@ -10,6 +10,7 @@ from news_agent.schemas.models import Article
 GITHUB_API = "https://api.github.com/search/repositories"
 LANGUAGES = "language:python OR language:typescript OR language:go"
 LIMIT = 10
+TRENDING_WINDOW_DAYS = 7
 
 
 class GitHubAgent(BaseAgent):
@@ -17,7 +18,9 @@ class GitHubAgent(BaseAgent):
 
     async def _fetch_articles(self, client: httpx.AsyncClient) -> list[Article]:
         settings = get_settings()
-        since = (datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%d")
+        since = (datetime.now(timezone.utc) - timedelta(days=TRENDING_WINDOW_DAYS)).strftime(
+            "%Y-%m-%d"
+        )
         headers = (
             {"Authorization": f"Bearer {settings.github_token}"} if settings.github_token else {}
         )
