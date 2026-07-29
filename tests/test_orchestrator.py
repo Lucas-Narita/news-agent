@@ -24,15 +24,15 @@ async def test_run_digest_aggregates_all_sources(monkeypatch):
 
     with (
         patch(
-            "news_agent.orchestrator.HackerNewsAgent.fetch",
+            "news_agent.agents.hackernews.HackerNewsAgent.fetch",
             new=AsyncMock(return_value=_ok_result("hackernews")),
         ),
         patch(
-            "news_agent.orchestrator.GitHubAgent.fetch",
+            "news_agent.agents.github.GitHubAgent.fetch",
             new=AsyncMock(return_value=_ok_result("github")),
         ),
         patch(
-            "news_agent.orchestrator.NewsAPIAgent.fetch",
+            "news_agent.agents.newsapi.NewsAPIAgent.fetch",
             new=AsyncMock(return_value=_ok_result("newsapi")),
         ),
         patch(
@@ -57,11 +57,11 @@ async def test_run_digest_skips_failed_source(monkeypatch):
 
     with (
         patch(
-            "news_agent.orchestrator.HackerNewsAgent.fetch",
+            "news_agent.agents.hackernews.HackerNewsAgent.fetch",
             new=AsyncMock(return_value=_ok_result("hackernews")),
         ),
         patch(
-            "news_agent.orchestrator.GitHubAgent.fetch",
+            "news_agent.agents.github.GitHubAgent.fetch",
             new=AsyncMock(return_value=_err_result("github")),
         ),
         patch(
@@ -87,7 +87,7 @@ async def test_run_digest_all_sources_fail_skips_llm(monkeypatch):
     mock_llm = AsyncMock(return_value="# Digest")
     with (
         patch(
-            "news_agent.orchestrator.HackerNewsAgent.fetch",
+            "news_agent.agents.hackernews.HackerNewsAgent.fetch",
             new=AsyncMock(return_value=_err_result("hackernews")),
         ),
         patch("news_agent.orchestrator.generate_narrative", new=mock_llm),
@@ -111,7 +111,7 @@ async def test_run_digest_calls_generate_narrative_with_articles(monkeypatch):
     mock_llm = AsyncMock(return_value="# Digest")
     with (
         patch(
-            "news_agent.orchestrator.HackerNewsAgent.fetch",
+            "news_agent.agents.hackernews.HackerNewsAgent.fetch",
             new=AsyncMock(return_value=_ok_result("hackernews", n=2)),
         ),
         patch("news_agent.orchestrator.generate_narrative", new=mock_llm),
@@ -135,7 +135,7 @@ async def test_run_digest_llm_failure_falls_back_to_raw_list(monkeypatch):
     failing_llm = AsyncMock(side_effect=RuntimeError("API down"))
     with (
         patch(
-            "news_agent.orchestrator.HackerNewsAgent.fetch",
+            "news_agent.agents.hackernews.HackerNewsAgent.fetch",
             new=AsyncMock(return_value=_ok_result("hackernews", n=2)),
         ),
         patch("news_agent.orchestrator.generate_narrative", new=failing_llm),
@@ -159,7 +159,7 @@ async def test_run_digest_logs_exception_when_llm_fails(monkeypatch, caplog):
     failing_llm = AsyncMock(side_effect=RuntimeError("API down"))
     with (
         patch(
-            "news_agent.orchestrator.HackerNewsAgent.fetch",
+            "news_agent.agents.hackernews.HackerNewsAgent.fetch",
             new=AsyncMock(return_value=_ok_result("hackernews", n=2)),
         ),
         patch("news_agent.orchestrator.generate_narrative", new=failing_llm),
@@ -200,8 +200,8 @@ async def test_run_digest_deduplicates_and_ranks_before_narrating(monkeypatch):
 
     mock_llm = AsyncMock(return_value="# Digest")
     with (
-        patch("news_agent.orchestrator.HackerNewsAgent.fetch", new=AsyncMock(return_value=hn)),
-        patch("news_agent.orchestrator.GitHubAgent.fetch", new=AsyncMock(return_value=gh)),
+        patch("news_agent.agents.hackernews.HackerNewsAgent.fetch", new=AsyncMock(return_value=hn)),
+        patch("news_agent.agents.github.GitHubAgent.fetch", new=AsyncMock(return_value=gh)),
         patch("news_agent.orchestrator.generate_narrative", new=mock_llm),
     ):
         from news_agent.orchestrator import run_digest
@@ -224,11 +224,11 @@ async def test_run_digest_logs_warning_for_failed_source(monkeypatch, caplog):
 
     with (
         patch(
-            "news_agent.orchestrator.HackerNewsAgent.fetch",
+            "news_agent.agents.hackernews.HackerNewsAgent.fetch",
             new=AsyncMock(return_value=_ok_result("hackernews")),
         ),
         patch(
-            "news_agent.orchestrator.GitHubAgent.fetch",
+            "news_agent.agents.github.GitHubAgent.fetch",
             new=AsyncMock(return_value=_err_result("github")),
         ),
         patch("news_agent.orchestrator.generate_narrative", new=AsyncMock(return_value="# Digest")),
@@ -252,7 +252,7 @@ async def test_run_digest_includes_ranked_articles_in_output(monkeypatch):
     fetched = _ok_result("hackernews", n=3)
     with (
         patch(
-            "news_agent.orchestrator.HackerNewsAgent.fetch",
+            "news_agent.agents.hackernews.HackerNewsAgent.fetch",
             new=AsyncMock(return_value=fetched),
         ),
         patch("news_agent.orchestrator.generate_narrative", new=AsyncMock(return_value="# Digest")),
@@ -272,7 +272,7 @@ async def test_run_digest_generated_at_is_timezone_aware(monkeypatch):
     settings = get_settings()
     with (
         patch(
-            "news_agent.orchestrator.HackerNewsAgent.fetch",
+            "news_agent.agents.hackernews.HackerNewsAgent.fetch",
             new=AsyncMock(return_value=_ok_result("hackernews")),
         ),
         patch("news_agent.orchestrator.generate_narrative", new=AsyncMock(return_value="# D")),
@@ -292,11 +292,11 @@ async def test_run_digest_reports_agent_roster(monkeypatch):
     settings = get_settings()
     with (
         patch(
-            "news_agent.orchestrator.HackerNewsAgent.fetch",
+            "news_agent.agents.hackernews.HackerNewsAgent.fetch",
             new=AsyncMock(return_value=_ok_result("hackernews", n=2)),
         ),
         patch(
-            "news_agent.orchestrator.GitHubAgent.fetch",
+            "news_agent.agents.github.GitHubAgent.fetch",
             new=AsyncMock(return_value=_err_result("github")),
         ),
         patch("news_agent.orchestrator.generate_narrative", new=AsyncMock(return_value="# D")),
@@ -327,7 +327,7 @@ async def test_run_digest_applies_limit_to_top_ranked(monkeypatch):
 
     mock_llm = AsyncMock(return_value="# Digest")
     with (
-        patch("news_agent.orchestrator.HackerNewsAgent.fetch", new=AsyncMock(return_value=fetched)),
+        patch("news_agent.agents.hackernews.HackerNewsAgent.fetch", new=AsyncMock(return_value=fetched)),
         patch("news_agent.orchestrator.generate_narrative", new=mock_llm),
     ):
         from news_agent.orchestrator import run_digest

@@ -178,8 +178,8 @@ def test_run_json_stdout_pure_when_source_fails(monkeypatch):
 
     isolated = CliRunner()
     with (
-        patch("news_agent.orchestrator.HackerNewsAgent.fetch", new=AsyncMock(return_value=ok)),
-        patch("news_agent.orchestrator.GitHubAgent.fetch", new=AsyncMock(return_value=err)),
+        patch("news_agent.agents.hackernews.HackerNewsAgent.fetch", new=AsyncMock(return_value=ok)),
+        patch("news_agent.agents.github.GitHubAgent.fetch", new=AsyncMock(return_value=err)),
         patch("news_agent.orchestrator.generate_narrative", new=AsyncMock(return_value="# D")),
     ):
         result = isolated.invoke(

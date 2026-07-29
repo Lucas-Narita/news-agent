@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from rich.console import Console
 from rich.table import Table
 
+from news_agent.agents.registry import SOURCE_NAMES
 from news_agent.config import Settings, get_settings
 from news_agent.logging_config import configure_logging
 from news_agent.orchestrator import run_digest
@@ -90,15 +91,8 @@ def resolve_sources(sources_flag: Optional[str], settings: Settings) -> list[str
     else:
         requested = list(settings.default_sources)
 
-    available = {
-        "hackernews": True,
-        "github": True,
-        "newsapi": settings.newsapi_key is not None,
-        "reddit": True,
-        "devto": True,
-        "lobsters": True,
-        "arxiv": True,
-    }
+    available = {name: True for name in SOURCE_NAMES}
+    available["newsapi"] = settings.newsapi_key is not None
 
     return [s for s in requested if available.get(s, False)]
 
@@ -108,7 +102,7 @@ def run(
     sources: Optional[str] = typer.Option(
         None,
         "--sources",
-        help="Comma-separated: hackernews, github, newsapi, reddit, devto, lobsters, arxiv",
+        help=f"Comma-separated: {', '.join(SOURCE_NAMES)}",
     ),
     no_file: bool = typer.Option(False, "--no-file", help="Print to terminal only, skip .md file"),
     limit: Optional[int] = typer.Option(

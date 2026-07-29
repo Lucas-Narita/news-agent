@@ -2,13 +2,7 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 
-from news_agent.agents.arxiv import ArxivAgent
-from news_agent.agents.devto import DevToAgent
-from news_agent.agents.github import GitHubAgent
-from news_agent.agents.hackernews import HackerNewsAgent
-from news_agent.agents.lobsters import LobstersAgent
-from news_agent.agents.newsapi import NewsAPIAgent
-from news_agent.agents.reddit import RedditAgent
+from news_agent.agents.registry import AGENT_REGISTRY
 from news_agent.config import Settings
 from news_agent.llm.client import generate_narrative
 from news_agent.output.markdown import format_articles
@@ -17,15 +11,7 @@ from news_agent.schemas.models import AgentStatus, Article, DigestOutput
 
 logger = logging.getLogger(__name__)
 
-_REGISTRY = {
-    "hackernews": HackerNewsAgent,
-    "github": GitHubAgent,
-    "newsapi": NewsAPIAgent,
-    "reddit": RedditAgent,
-    "devto": DevToAgent,
-    "lobsters": LobstersAgent,
-    "arxiv": ArxivAgent,
-}
+_REGISTRY = AGENT_REGISTRY
 
 
 async def run_digest(

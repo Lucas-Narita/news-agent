@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     newsapi_key: str | None = None
     github_token: str | None = None
     output_dir: Path = Path("output")
+    # Kept as a literal (not imported from news_agent.agents.registry) to avoid a
+    # circular import: agents already import Settings from this module. Must stay
+    # in sync with news_agent.agents.registry.SOURCE_NAMES.
     default_sources: list[str] = [
         "hackernews",
         "github",
