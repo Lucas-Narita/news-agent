@@ -7,12 +7,15 @@ def _make_article(source: str = "hackernews") -> Article:
     return Article(title="Test Story", url="https://example.com", source=source)
 
 
-def _mock_response(text: str = "# Digest\nTop stories.") -> MagicMock:
+def _mock_response(
+    text: str = "# Digest\nTop stories.", stop_reason: str = "end_turn"
+) -> MagicMock:
     content_block = MagicMock()
     content_block.type = "text"
     content_block.text = text
     response = MagicMock()
     response.content = [content_block]
+    response.stop_reason = stop_reason
     return response
 
 
@@ -103,3 +106,20 @@ async def test_generate_narrative_handles_empty_content(monkeypatch):
 
     assert isinstance(result, str)
     assert result
+
+
+async def test_generate_narrative_warns_on_truncation(monkeypatch, caplog):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.config import get_settings
+
+    settings = get_settings()
+
+    mock_create = AsyncMock(return_value=_mock_response(stop_reason="max_tokens"))
+    with patch("news_agent.llm.client.anthropic.AsyncAnthropic") as MockClient:
+        MockClient.return_value.messages.create = mock_create
+        from news_agent.llm.client import generate_narrative
+
+        with caplog.at_level("WARNING", logger="news_agent.llm.client"):
+            await generate_narrative([_make_article()], settings)
+
+    assert any("truncated" in record.message for record in caplog.records)

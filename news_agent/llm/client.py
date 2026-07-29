@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 
 import anthropic
@@ -6,6 +7,8 @@ from news_agent.config import Settings
 from news_agent.llm.prompts import SYSTEM_PROMPT, build_user_message
 from news_agent.output.markdown import format_articles
 from news_agent.schemas.models import Article
+
+logger = logging.getLogger(__name__)
 
 MODEL = "claude-sonnet-4-6"
 MAX_TOKENS = 1024
@@ -39,6 +42,11 @@ async def generate_narrative(articles: list[Article], settings: Settings) -> str
             }
         ],
     )
+    if response.stop_reason == "max_tokens":
+        logger.warning(
+            "narrative generation truncated at max_tokens=%d; digest may be incomplete",
+            MAX_TOKENS,
+        )
     text_blocks = [b for b in response.content if getattr(b, "type", None) == "text"]
     if not text_blocks:
         return "Narrative unavailable — the model returned no text content."
