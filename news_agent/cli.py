@@ -10,6 +10,7 @@ from rich.console import Console
 from rich.table import Table
 
 from news_agent.agents.registry import SOURCE_NAMES
+from news_agent.cache import load_cached_digest, save_digest_to_cache
 from news_agent.config import Settings, get_settings
 from news_agent.logging_config import configure_logging
 from news_agent.orchestrator import run_digest
@@ -112,6 +113,12 @@ def run(
     output_format: OutputFormat = typer.Option(
         OutputFormat.markdown, "--format", help="Output format: markdown or json"
     ),
+    cache: bool = typer.Option(
+        False, "--cache", help="Reuse a cached digest for the same sources within --cache-ttl"
+    ),
+    cache_ttl: int = typer.Option(
+        3600, "--cache-ttl", help="Cache freshness window in seconds (used with --cache)"
+    ),
 ):
     """Fetch tech news and generate a digest."""
     configure_logging(verbose=verbose)
@@ -138,13 +145,22 @@ def run(
         err_console.print("[red]No sources available. Check your API keys.[/red]")
         raise typer.Exit(code=1)
 
-    err_console.print(f"[bold]Fetching from:[/bold] {', '.join(active_sources)}")
+    digest = None
+    if cache:
+        digest = load_cached_digest(settings.output_dir, active_sources, cache_ttl)
+        if digest is not None:
+            err_console.print("[dim]Using cached digest (--cache-ttl not yet expired)[/dim]")
 
-    try:
-        digest = asyncio.run(run_digest(active_sources, settings, limit=limit))
-    except Exception as e:
-        err_console.print(f"[red]Error: {e}[/red]")
-        raise typer.Exit(code=1)
+    if digest is None:
+        err_console.print(f"[bold]Fetching from:[/bold] {', '.join(active_sources)}")
+        try:
+            digest = asyncio.run(run_digest(active_sources, settings, limit=limit))
+        except Exception as e:
+            err_console.print(f"[red]Error: {e}[/red]")
+            raise typer.Exit(code=1)
+
+        if cache:
+            save_digest_to_cache(settings.output_dir, active_sources, digest)
 
     if output_format is OutputFormat.json:
         # stdout stays pure JSON so the digest can be piped into jq or another tool

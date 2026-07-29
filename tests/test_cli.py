@@ -19,6 +19,31 @@ def _mock_digest() -> DigestOutput:
     )
 
 
+def test_run_with_cache_skips_second_fetch(monkeypatch):
+    from news_agent.cli import app
+
+    mock_run_digest = AsyncMock(return_value=_mock_digest())
+    with patch("news_agent.cli.run_digest", new=mock_run_digest):
+        first = runner.invoke(app, ["run", "--no-file", "--sources", "hackernews", "--cache"])
+        second = runner.invoke(app, ["run", "--no-file", "--sources", "hackernews", "--cache"])
+
+    assert first.exit_code == 0
+    assert second.exit_code == 0
+    assert mock_run_digest.await_count == 1
+    assert "Using cached digest" in second.output
+
+
+def test_run_without_cache_flag_always_fetches(monkeypatch):
+    from news_agent.cli import app
+
+    mock_run_digest = AsyncMock(return_value=_mock_digest())
+    with patch("news_agent.cli.run_digest", new=mock_run_digest):
+        runner.invoke(app, ["run", "--no-file", "--sources", "hackernews"])
+        runner.invoke(app, ["run", "--no-file", "--sources", "hackernews"])
+
+    assert mock_run_digest.await_count == 2
+
+
 def test_config_check_all_present(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test-1234")
     monkeypatch.setenv("NEWSAPI_KEY", "news-test-5678")
