@@ -34,6 +34,40 @@ async def test_run_digest_skips_unregistered_source_name(monkeypatch):
     assert result.total_articles == 0
 
 
+async def test_run_digest_survives_agent_raising_exception(monkeypatch):
+    """If one agent's fetch() unexpectedly raises, the digest must still
+    complete deterministically using the surviving sources."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.config import get_settings
+
+    settings = get_settings()
+
+    with (
+        patch(
+            "news_agent.agents.hackernews.HackerNewsAgent.fetch",
+            new=AsyncMock(return_value=_ok_result("hackernews", n=2)),
+        ),
+        patch(
+            "news_agent.agents.github.GitHubAgent.fetch",
+            new=AsyncMock(side_effect=RuntimeError("boom")),
+        ),
+        patch(
+            "news_agent.orchestrator.generate_narrative",
+            new=AsyncMock(return_value="# Digest"),
+        ),
+    ):
+        from news_agent.orchestrator import run_digest
+
+        result = await run_digest(["hackernews", "github"], settings)
+
+    assert result.sources_used == ["hackernews"]
+    assert result.total_articles == 2
+    roster = {a.name: a for a in result.agents}
+    assert roster["hackernews"].ok is True
+    assert roster["github"].ok is False
+    assert roster["github"].article_count == 0
+
+
 async def test_run_digest_aggregates_all_sources(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     from news_agent.config import get_settings

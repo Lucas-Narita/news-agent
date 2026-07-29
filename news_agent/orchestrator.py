@@ -20,15 +20,25 @@ async def run_digest(
     """Fetch every requested source in parallel, then narrate the survivors.
 
     Agents never raise — failures arrive as AgentResult.error and are simply skipped,
-    so a single dead API degrades the digest instead of breaking the run.
+    so a single dead API degrades the digest instead of breaking the run. An
+    unexpected exception (should a future agent violate that contract) is
+    caught via asyncio.gather(return_exceptions=True) and treated the same way.
     """
     agents = [_REGISTRY[s]() for s in sources if s in _REGISTRY]
-    results = await asyncio.gather(*[agent.fetch() for agent in agents])
+    # return_exceptions=True is defense in depth: BaseAgent.fetch() already
+    # never raises, but a bug in a future agent must degrade that one source
+    # instead of crashing the whole digest.
+    raw_results = await asyncio.gather(*[agent.fetch() for agent in agents], return_exceptions=True)
 
     articles: list[Article] = []
     sources_used: list[str] = []
     roster: list[AgentStatus] = []
-    for result in results:
+    for agent, result in zip(agents, raw_results, strict=True):
+        if isinstance(result, BaseException):
+            logger.warning("source %s raised unexpectedly: %s", agent.name, result)
+            roster.append(AgentStatus(name=agent.name, ok=False, article_count=0))
+            continue
+
         roster.append(
             AgentStatus(
                 name=result.source,
