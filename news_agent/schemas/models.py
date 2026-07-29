@@ -7,6 +7,9 @@ class Article(BaseModel):
     title: str
     url: str
     source: str
+    # Engagement metric normalized across sources (HN/Lobsters points, Reddit
+    # upvotes — which can be negative, Dev.to reactions, GitHub stars). None
+    # when the source has no such concept (e.g. arXiv).
     score: int | None = None
     published_at: datetime | None = None
     summary: str | None = None
