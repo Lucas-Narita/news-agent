@@ -84,6 +84,25 @@ def test_resolve_sources_includes_newsapi_when_key_present(monkeypatch):
     assert "newsapi" in result
 
 
+def test_resolve_sources_default_includes_all_seven_agents(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.setenv("NEWSAPI_KEY", "news-key")
+    from news_agent.cli import resolve_sources
+    from news_agent.config import get_settings
+
+    settings = get_settings()
+    result = resolve_sources(None, settings)
+    assert set(result) == {
+        "hackernews",
+        "github",
+        "newsapi",
+        "reddit",
+        "devto",
+        "lobsters",
+        "arxiv",
+    }
+
+
 def test_resolve_sources_drops_unknown_names(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     from news_agent.cli import resolve_sources
