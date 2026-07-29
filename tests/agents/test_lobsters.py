@@ -70,6 +70,19 @@ async def test_lobsters_skips_malformed_item():
     assert len(result.articles) == 1
 
 
+async def test_lobsters_network_timeout():
+    with respx.mock:
+        respx.get(LOBSTERS_URL).mock(side_effect=httpx.TimeoutException("timeout"))
+
+        from news_agent.agents.lobsters import LobstersAgent
+
+        agent = LobstersAgent()
+        result = await agent.fetch()
+
+    assert result.error is not None
+    assert result.articles == []
+
+
 async def test_lobsters_api_error():
     with respx.mock:
         respx.get(LOBSTERS_URL).mock(return_value=httpx.Response(503))

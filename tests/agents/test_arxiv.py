@@ -161,6 +161,19 @@ async def test_arxiv_skips_entry_with_malformed_published_date():
     assert len(result.articles) == 1
 
 
+async def test_arxiv_network_timeout():
+    with respx.mock:
+        respx.get(ARXIV_URL).mock(side_effect=httpx.TimeoutException("timeout"))
+
+        from news_agent.agents.arxiv import ArxivAgent
+
+        agent = ArxivAgent()
+        result = await agent.fetch()
+
+    assert result.error is not None
+    assert result.articles == []
+
+
 async def test_arxiv_api_error():
     with respx.mock:
         respx.get(ARXIV_URL).mock(return_value=httpx.Response(503))

@@ -68,6 +68,19 @@ async def test_reddit_skips_malformed_item():
     assert len(result.articles) == 1
 
 
+async def test_reddit_network_timeout():
+    with respx.mock:
+        respx.get(REDDIT_URL).mock(side_effect=httpx.TimeoutException("timeout"))
+
+        from news_agent.agents.reddit import RedditAgent
+
+        agent = RedditAgent()
+        result = await agent.fetch()
+
+    assert result.error is not None
+    assert result.articles == []
+
+
 async def test_reddit_api_error():
     with respx.mock:
         respx.get(REDDIT_URL).mock(return_value=httpx.Response(503))

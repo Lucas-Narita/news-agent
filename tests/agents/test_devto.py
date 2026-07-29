@@ -52,6 +52,19 @@ async def test_devto_skips_malformed_item():
     assert len(result.articles) == 1
 
 
+async def test_devto_network_timeout():
+    with respx.mock:
+        respx.get(DEVTO_URL).mock(side_effect=httpx.TimeoutException("timeout"))
+
+        from news_agent.agents.devto import DevToAgent
+
+        agent = DevToAgent()
+        result = await agent.fetch()
+
+    assert result.error is not None
+    assert result.articles == []
+
+
 async def test_devto_api_error():
     with respx.mock:
         respx.get(DEVTO_URL).mock(return_value=httpx.Response(503))
