@@ -117,10 +117,19 @@ def run(
     configure_logging(verbose=verbose)
     try:
         settings = get_settings()
-    except ValidationError:
-        err_console.print(
-            "[red]Configuration error. Run 'news-agent config check' for details.[/red]"
-        )
+    except ValidationError as e:
+        missing = [str(error["loc"][0]) for error in e.errors() if error["loc"]]
+        if missing:
+            fields = ", ".join(f.upper() for f in missing)
+            err_console.print(f"[red]Missing required environment variable(s): {fields}.[/red]")
+            err_console.print(
+                "[dim]Copy .env.example to .env and fill in the values, "
+                "or run 'news-agent config check' for the full status.[/dim]"
+            )
+        else:
+            err_console.print(
+                "[red]Configuration error. Run 'news-agent config check' for details.[/red]"
+            )
         raise typer.Exit(code=1)
 
     active_sources = resolve_sources(sources, settings)

@@ -230,7 +230,8 @@ def test_run_config_validation_error(monkeypatch):
     result = runner.invoke(app, ["run", "--no-file", "--sources", "hackernews"])
     get_settings.cache_clear()
     assert result.exit_code == 1
-    assert "Configuration error" in result.output
+    assert "ANTHROPIC_API_KEY" in result.output
+    assert ".env.example" in result.output
 
 
 def test_run_no_active_sources(monkeypatch):
