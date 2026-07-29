@@ -16,6 +16,24 @@ def _err_result(source: str) -> AgentResult:
     return AgentResult(source=source, articles=[], fetched_at=datetime.now(), error="API failed")
 
 
+async def test_run_digest_skips_unregistered_source_name(monkeypatch):
+    """An unknown source name must be silently dropped, not raise KeyError."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.config import get_settings
+    from news_agent.orchestrator import run_digest
+
+    settings = get_settings()
+
+    with patch(
+        "news_agent.orchestrator.generate_narrative",
+        new=AsyncMock(return_value="# Digest"),
+    ):
+        result = await run_digest(["not-a-real-source"], settings)
+
+    assert result.sources_used == []
+    assert result.total_articles == 0
+
+
 async def test_run_digest_aggregates_all_sources(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     from news_agent.config import get_settings
@@ -327,7 +345,10 @@ async def test_run_digest_applies_limit_to_top_ranked(monkeypatch):
 
     mock_llm = AsyncMock(return_value="# Digest")
     with (
-        patch("news_agent.agents.hackernews.HackerNewsAgent.fetch", new=AsyncMock(return_value=fetched)),
+        patch(
+            "news_agent.agents.hackernews.HackerNewsAgent.fetch",
+            new=AsyncMock(return_value=fetched),
+        ),
         patch("news_agent.orchestrator.generate_narrative", new=mock_llm),
     ):
         from news_agent.orchestrator import run_digest
