@@ -17,7 +17,7 @@ class GitHubAgent(BaseAgent):
 
     async def fetch(self) -> AgentResult:
         settings = get_settings()
-        since = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+        since = (datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%d")
         headers = (
             {"Authorization": f"Bearer {settings.github_token}"} if settings.github_token else {}
         )
@@ -64,4 +64,6 @@ class GitHubAgent(BaseAgent):
                 error=str(e),
             )
 
-        return AgentResult(source=self.name, articles=articles, fetched_at=datetime.now(timezone.utc))
+        return AgentResult(
+            source=self.name, articles=articles, fetched_at=datetime.now(timezone.utc)
+        )
