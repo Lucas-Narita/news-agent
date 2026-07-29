@@ -5,7 +5,7 @@ import httpx
 from news_agent.agents.base import BaseAgent
 from news_agent.config import get_settings
 from news_agent.retry import with_retry
-from news_agent.schemas.models import AgentResult, Article
+from news_agent.schemas.models import Article
 
 NEWSAPI_URL = "https://newsapi.org/v2/top-headlines"
 LIMIT = 10
@@ -14,53 +14,34 @@ LIMIT = 10
 class NewsAPIAgent(BaseAgent):
     name = "newsapi"
 
-    async def fetch(self) -> AgentResult:
+    def _precheck(self) -> str | None:
+        if not get_settings().newsapi_key:
+            return "NEWSAPI_KEY not configured"
+        return None
+
+    async def _fetch_articles(self, client: httpx.AsyncClient) -> list[Article]:
         settings = get_settings()
 
-        if not settings.newsapi_key:
-            return AgentResult(
-                source=self.name,
-                articles=[],
-                fetched_at=datetime.now(timezone.utc),
-                error="NEWSAPI_KEY not configured",
+        async def _get():
+            resp = await client.get(
+                NEWSAPI_URL,
+                params={"category": "technology", "language": "en", "pageSize": LIMIT},
+                headers={"X-Api-Key": settings.newsapi_key},
             )
+            resp.raise_for_status()
+            return resp
 
-        try:
-            async with httpx.AsyncClient(timeout=settings.request_timeout) as client:
+        resp = await with_retry(_get)
+        raw = resp.json().get("articles", [])
 
-                async def _get():
-                    resp = await client.get(
-                        NEWSAPI_URL,
-                        params={"category": "technology", "language": "en", "pageSize": LIMIT},
-                        headers={"X-Api-Key": settings.newsapi_key},
-                    )
-                    resp.raise_for_status()
-                    return resp
-
-                resp = await with_retry(_get)
-                raw = resp.json().get("articles", [])
-
-                articles = [
-                    Article(
-                        title=a["title"],
-                        url=a["url"],
-                        source=self.name,
-                        published_at=datetime.fromisoformat(
-                            a["publishedAt"].replace("Z", "+00:00")
-                        ),
-                        summary=a.get("description"),
-                    )
-                    for a in raw
-                    if a.get("title") not in (None, "[Removed]")
-                    and a.get("url") not in (None, "[Removed]")
-                ]
-
-        except Exception as e:
-            return AgentResult(
+        return [
+            Article(
+                title=a["title"],
+                url=a["url"],
                 source=self.name,
-                articles=[],
-                fetched_at=datetime.now(timezone.utc),
-                error=str(e),
+                published_at=datetime.fromisoformat(a["publishedAt"].replace("Z", "+00:00")),
+                summary=a.get("description"),
             )
-
-        return AgentResult(source=self.name, articles=articles, fetched_at=datetime.now(timezone.utc))
+            for a in raw
+            if a.get("title") not in (None, "[Removed]") and a.get("url") not in (None, "[Removed]")
+        ]

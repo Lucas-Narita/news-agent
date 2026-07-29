@@ -3,9 +3,8 @@ from datetime import datetime, timezone
 import httpx
 
 from news_agent.agents.base import BaseAgent
-from news_agent.config import get_settings
 from news_agent.retry import with_retry
-from news_agent.schemas.models import AgentResult, Article
+from news_agent.schemas.models import Article
 
 REDDIT_URL = "https://www.reddit.com/r/programming/hot.json"
 USER_AGENT = "news-agent/0.1 (tech digest bot)"
@@ -35,32 +34,19 @@ def _parse_child(child: dict, source: str) -> Article | None:
 class RedditAgent(BaseAgent):
     name = "reddit"
 
-    async def fetch(self) -> AgentResult:
-        settings = get_settings()
-        try:
-            async with httpx.AsyncClient(timeout=settings.request_timeout) as client:
-
-                async def _get():
-                    resp = await client.get(
-                        REDDIT_URL,
-                        params={"limit": LIMIT},
-                        headers={"User-Agent": USER_AGENT},
-                    )
-                    resp.raise_for_status()
-                    return resp
-
-                resp = await with_retry(_get)
-                children = resp.json()["data"]["children"]
-
-                articles = [
-                    article
-                    for child in children
-                    if (article := _parse_child(child, self.name)) is not None
-                ]
-
-        except Exception as e:
-            return AgentResult(
-                source=self.name, articles=[], fetched_at=datetime.now(timezone.utc), error=str(e)
+    async def _fetch_articles(self, client: httpx.AsyncClient) -> list[Article]:
+        async def _get():
+            resp = await client.get(
+                REDDIT_URL,
+                params={"limit": LIMIT},
+                headers={"User-Agent": USER_AGENT},
             )
+            resp.raise_for_status()
+            return resp
 
-        return AgentResult(source=self.name, articles=articles, fetched_at=datetime.now(timezone.utc))
+        resp = await with_retry(_get)
+        children = resp.json()["data"]["children"]
+
+        return [
+            article for child in children if (article := _parse_child(child, self.name)) is not None
+        ]

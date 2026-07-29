@@ -1,13 +1,12 @@
 import xml.etree.ElementTree as ET  # Element type hint only; parsing goes through defusedxml
-from datetime import datetime, timezone
+from datetime import datetime
 
 import defusedxml.ElementTree as safe_ET
 import httpx
 
 from news_agent.agents.base import BaseAgent
-from news_agent.config import get_settings
 from news_agent.retry import with_retry
-from news_agent.schemas.models import AgentResult, Article
+from news_agent.schemas.models import Article
 
 ARXIV_URL = "https://export.arxiv.org/api/query"
 SEARCH_QUERY = "cat:cs.AI"
@@ -59,37 +58,24 @@ def _parse_entry(entry: ET.Element, source: str) -> Article | None:
 class ArxivAgent(BaseAgent):
     name = "arxiv"
 
-    async def fetch(self) -> AgentResult:
-        settings = get_settings()
-        try:
-            async with httpx.AsyncClient(timeout=settings.request_timeout) as client:
-
-                async def _get():
-                    resp = await client.get(
-                        ARXIV_URL,
-                        params={
-                            "search_query": SEARCH_QUERY,
-                            "sortBy": "submittedDate",
-                            "sortOrder": "descending",
-                            "max_results": MAX_RESULTS,
-                        },
-                    )
-                    resp.raise_for_status()
-                    return resp
-
-                resp = await with_retry(_get)
-                root = safe_ET.fromstring(resp.text)
-                entries = root.findall("atom:entry", ATOM_NS)
-
-                articles = [
-                    article
-                    for entry in entries
-                    if (article := _parse_entry(entry, self.name)) is not None
-                ]
-
-        except Exception as e:
-            return AgentResult(
-                source=self.name, articles=[], fetched_at=datetime.now(timezone.utc), error=str(e)
+    async def _fetch_articles(self, client: httpx.AsyncClient) -> list[Article]:
+        async def _get():
+            resp = await client.get(
+                ARXIV_URL,
+                params={
+                    "search_query": SEARCH_QUERY,
+                    "sortBy": "submittedDate",
+                    "sortOrder": "descending",
+                    "max_results": MAX_RESULTS,
+                },
             )
+            resp.raise_for_status()
+            return resp
 
-        return AgentResult(source=self.name, articles=articles, fetched_at=datetime.now(timezone.utc))
+        resp = await with_retry(_get)
+        root = safe_ET.fromstring(resp.text)
+        entries = root.findall("atom:entry", ATOM_NS)
+
+        return [
+            article for entry in entries if (article := _parse_entry(entry, self.name)) is not None
+        ]
