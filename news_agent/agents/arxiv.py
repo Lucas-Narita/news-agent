@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET  # Element type hint only; parsing goes through defusedxml
-from datetime import datetime
+from datetime import datetime, timezone
 
 import defusedxml.ElementTree as safe_ET
 import httpx
@@ -89,7 +89,7 @@ class ArxivAgent(BaseAgent):
 
         except Exception as e:
             return AgentResult(
-                source=self.name, articles=[], fetched_at=datetime.now(), error=str(e)
+                source=self.name, articles=[], fetched_at=datetime.now(timezone.utc), error=str(e)
             )
 
-        return AgentResult(source=self.name, articles=articles, fetched_at=datetime.now())
+        return AgentResult(source=self.name, articles=articles, fetched_at=datetime.now(timezone.utc))

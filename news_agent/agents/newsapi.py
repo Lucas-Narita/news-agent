@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import httpx
 
@@ -21,7 +21,7 @@ class NewsAPIAgent(BaseAgent):
             return AgentResult(
                 source=self.name,
                 articles=[],
-                fetched_at=datetime.now(),
+                fetched_at=datetime.now(timezone.utc),
                 error="NEWSAPI_KEY not configured",
             )
 
@@ -59,8 +59,8 @@ class NewsAPIAgent(BaseAgent):
             return AgentResult(
                 source=self.name,
                 articles=[],
-                fetched_at=datetime.now(),
+                fetched_at=datetime.now(timezone.utc),
                 error=str(e),
             )
 
-        return AgentResult(source=self.name, articles=articles, fetched_at=datetime.now())
+        return AgentResult(source=self.name, articles=articles, fetched_at=datetime.now(timezone.utc))

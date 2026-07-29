@@ -60,7 +60,7 @@ class RedditAgent(BaseAgent):
 
         except Exception as e:
             return AgentResult(
-                source=self.name, articles=[], fetched_at=datetime.now(), error=str(e)
+                source=self.name, articles=[], fetched_at=datetime.now(timezone.utc), error=str(e)
             )
 
-        return AgentResult(source=self.name, articles=articles, fetched_at=datetime.now())
+        return AgentResult(source=self.name, articles=articles, fetched_at=datetime.now(timezone.utc))
