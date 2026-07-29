@@ -29,6 +29,12 @@ class LobstersAgent(BaseAgent):
     name = "lobsters"
 
     async def _fetch_articles(self, client: httpx.AsyncClient) -> list[Article]:
+        """Fetch the hottest Lobsters stories and parse them into articles.
+
+        Malformed stories are skipped individually via ``_parse_story``; only
+        a network/HTTP failure propagates to fetch().
+        """
+
         async def _get():
             resp = await client.get(LOBSTERS_URL)
             resp.raise_for_status()

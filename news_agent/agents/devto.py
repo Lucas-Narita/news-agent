@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 import httpx
 
@@ -32,6 +32,12 @@ class DevToAgent(BaseAgent):
     name = "devto"
 
     async def _fetch_articles(self, client: httpx.AsyncClient) -> list[Article]:
+        """Fetch the top Dev.to articles of the last TOP_DAYS days.
+
+        Malformed items are skipped individually via ``_parse_article``; only
+        a network/HTTP failure propagates to fetch().
+        """
+
         async def _get():
             resp = await client.get(DEVTO_URL, params={"per_page": LIMIT, "top": TOP_DAYS})
             resp.raise_for_status()
@@ -40,6 +46,4 @@ class DevToAgent(BaseAgent):
         resp = await with_retry(_get)
         raw = resp.json()
 
-        return [
-            article for item in raw if (article := _parse_article(item, self.name)) is not None
-        ]
+        return [article for item in raw if (article := _parse_article(item, self.name)) is not None]

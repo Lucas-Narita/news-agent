@@ -59,6 +59,12 @@ class ArxivAgent(BaseAgent):
     name = "arxiv"
 
     async def _fetch_articles(self, client: httpx.AsyncClient) -> list[Article]:
+        """Fetch the most recent cs.AI papers and parse the Atom feed into articles.
+
+        Malformed entries are skipped individually via ``_parse_entry``; only
+        a network/HTTP failure propagates to fetch().
+        """
+
         async def _get():
             resp = await client.get(
                 ARXIV_URL,

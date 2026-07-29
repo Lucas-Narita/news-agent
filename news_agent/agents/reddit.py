@@ -35,6 +35,12 @@ class RedditAgent(BaseAgent):
     name = "reddit"
 
     async def _fetch_articles(self, client: httpx.AsyncClient) -> list[Article]:
+        """Fetch the hot r/programming listing and parse it into articles.
+
+        Malformed children (missing url/title) are skipped individually via
+        ``_parse_child``; only a network/HTTP failure propagates to fetch().
+        """
+
         async def _get():
             resp = await client.get(
                 REDDIT_URL,
