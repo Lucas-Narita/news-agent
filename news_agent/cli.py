@@ -87,6 +87,12 @@ def config_check():
     else:
         table.add_row("GITHUB_TOKEN", "[yellow]OPTIONAL[/yellow]", "not set")
 
+    # Non-secret settings are shown verbatim: they change behaviour just as
+    # much as the keys do, and a surprising OUTPUT_DIR is otherwise invisible.
+    table.add_row("OUTPUT_DIR", "[green]OK[/green]", str(settings.output_dir))
+    table.add_row("REQUEST_TIMEOUT", "[green]OK[/green]", f"{settings.request_timeout}s")
+    table.add_row("CACHE_TTL", "[green]OK[/green]", f"{settings.cache_ttl}s")
+
     console.print(table)
 
 
@@ -161,8 +167,11 @@ def run(
     cache: bool = typer.Option(
         False, "--cache", help="Reuse a cached digest for the same sources within --cache-ttl"
     ),
-    cache_ttl: int = typer.Option(
-        3600, "--cache-ttl", help="Cache freshness window in seconds (used with --cache)"
+    cache_ttl: Optional[int] = typer.Option(
+        None,
+        "--cache-ttl",
+        min=1,
+        help="Cache freshness window in seconds (used with --cache) [default: CACHE_TTL]",
     ),
 ):
     """Fetch tech news and generate a digest."""
@@ -192,7 +201,8 @@ def run(
 
     digest = None
     if cache:
-        digest = load_cached_digest(settings.output_dir, active_sources, cache_ttl)
+        ttl = cache_ttl if cache_ttl is not None else settings.cache_ttl
+        digest = load_cached_digest(settings.output_dir, active_sources, ttl)
         if digest is not None:
             err_console.print("[dim]Using cached digest (--cache-ttl not yet expired)[/dim]")
 

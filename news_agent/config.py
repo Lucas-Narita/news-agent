@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     # gt=0 turns a typo like REQUEST_TIMEOUT=0 into a startup error instead of
     # httpx treating it as "fail immediately" on every source.
     request_timeout: float = Field(default=10.0, gt=0)
+    # Default freshness window for --cache. Lives here rather than as a CLI
+    # literal so scheduled runs can widen it without changing the invocation.
+    cache_ttl: int = Field(default=3600, gt=0)
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

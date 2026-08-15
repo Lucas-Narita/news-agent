@@ -86,3 +86,21 @@ def test_get_settings_is_cached(monkeypatch):
     s1 = get_settings()
     s2 = get_settings()
     assert s1 is s2
+
+
+def test_cache_ttl_defaults_to_one_hour(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    assert Settings().cache_ttl == 3600
+
+
+def test_cache_ttl_configurable(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.setenv("CACHE_TTL", "60")
+    assert Settings().cache_ttl == 60
+
+
+def test_cache_ttl_must_be_positive(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.setenv("CACHE_TTL", "0")
+    with pytest.raises(ValidationError):
+        Settings()
