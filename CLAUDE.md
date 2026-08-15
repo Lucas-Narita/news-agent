@@ -13,7 +13,7 @@ Agent CLI que agrega notícias e tendências de tech em tempo real (HackerNews, 
 
 **Objetivo:** projeto de portfólio público para posicionamento como AI Agent Engineer.
 **Proprietário:** Lucas Narita
-**Status:** seções 1–8 implementadas e testadas, mais evoluções (6 fontes, dedupe/ranking, retry com backoff, timeout configurável, logging, `--limit`/`--verbose`/`--format json`) — 91 testes (cobertura ≥80%), CI no GitHub Actions (lint + format + testes), LICENSE MIT. Pronto como peça de portfólio.
+**Status:** seções 1–8 implementadas e testadas, mais evoluções (7 fontes, dedupe por URL canônica, ranking determinístico, retry com backoff, cache com TTL, modelo/categoria/timeout configuráveis, `--limit`/`--verbose`/`--format json`/`--cache`/`--output-dir`, comando `sources`) — 188 testes (cobertura ≥80%), CI no GitHub Actions (lint + format + testes), LICENSE MIT. Pronto como peça de portfólio.
 
 ---
 
@@ -185,8 +185,13 @@ Todas as seções de design foram implementadas e testadas:
 - [x] Resiliência: retry com backoff exponencial (`retry.py`), timeout configurável (`REQUEST_TIMEOUT`), logging estruturado (`logging_config.py`, `--verbose`)
 - [x] Fontes adicionais: Reddit, Dev.to, Lobsters (total de 6, todas via `BaseAgent`)
 - [x] Output composável: `--format json` (digest serializado, stdout limpo para pipe)
+- [x] Determinismo: seções ordenadas pela ordem declarada das fontes e desempate de ranking
+  por recência + URL — a mesma entrada gera sempre o mesmo Markdown
+- [x] Configuração: `CACHE_TTL`, `ANTHROPIC_MODEL`, `MAX_TOKENS` e `ARXIV_CATEGORY` em `Settings`
+- [x] Resiliência de parsing: todo agent descarta itens malformados individualmente
+  (`_parse_*`), nunca perdendo a fonte inteira por causa de um item
 
-**Qualidade:** 91 testes (mockados, sem rede), cobertura ≥80% com gate no pytest,
+**Qualidade:** 188 testes (mockados, sem rede), cobertura ≥80% com gate no pytest,
 CI no GitHub Actions (lint + format + testes em Python 3.11/3.12/3.13), LICENSE MIT.
 
 ---
@@ -196,7 +201,10 @@ CI no GitHub Actions (lint + format + testes em Python 3.11/3.12/3.13), LICENSE 
 O design base está completo. A partir daqui, evoluções típicas:
 
 - **Adicionar uma nova fonte:** criar `news_agent/agents/<fonte>.py` (subclasse de
-  `BaseAgent`) e registrá-la no orquestrador — nada mais muda (Open/Closed).
+  `BaseAgent`) e registrá-la em `agents/registry.py`. `Settings.default_sources` e a CLI
+  derivam dali. Também adicionar a fonte em `llm/prompts.py::SOURCE_GUIDANCE` e em
+  `output/markdown.py::SOURCE_LABELS` — há teste garantindo que o prompt cobre todas as
+  fontes registradas.
 - **Ajustar a estratégia de prompt:** editar `news_agent/llm/prompts.py`.
 
 ---
