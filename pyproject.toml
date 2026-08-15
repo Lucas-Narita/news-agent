@@ -55,6 +55,11 @@ news_agent = ["py.typed"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+# Pinned explicitly: pytest-asyncio warns that the unset default will change,
+# and a surprise switch to a session-scoped loop would leak state between the
+# async agent tests.
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
 addopts = "--cov=news_agent --cov-report=term-missing --cov-fail-under=80"
 
 [tool.coverage.run]
