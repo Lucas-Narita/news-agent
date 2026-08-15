@@ -18,6 +18,19 @@ def test_article_optional_fields_default_to_none():
     assert a.published_at is None
 
 
+@pytest.mark.parametrize("field", ["title", "url", "source"])
+def test_article_rejects_blank_required_field(field):
+    values = {"title": "Test", "url": "https://example.com", "source": "hackernews"}
+    with pytest.raises(ValidationError):
+        Article(**{**values, field: "   "})
+
+
+def test_article_strips_surrounding_whitespace():
+    a = Article(title="  Test  ", url=" https://example.com ", source="hackernews")
+    assert a.title == "Test"
+    assert a.url == "https://example.com"
+
+
 def test_agent_result_graceful_error():
     r = AgentResult(
         source="newsapi",

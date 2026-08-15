@@ -1,12 +1,18 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Article(BaseModel):
-    title: str
-    url: str
-    source: str
+    # Articles are built from third-party JSON/XML, where a padded or empty
+    # string is a normal accident. Validating at this boundary means a bad item
+    # is rejected by the agent that parsed it, not silently rendered as an
+    # empty bullet in the digest.
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    title: str = Field(min_length=1)
+    url: str = Field(min_length=1)
+    source: str = Field(min_length=1)
     # Engagement metric normalized across sources (HN/Lobsters points, Reddit
     # upvotes — which can be negative, Dev.to reactions, GitHub stars). None
     # when the source has no such concept (e.g. arXiv).
