@@ -40,18 +40,24 @@ def test_output_dir_configurable(monkeypatch):
     assert s.output_dir == Path("/tmp/digests")
 
 
-def test_default_sources_includes_all_registered(monkeypatch):
+def test_default_sources_tracks_the_registry(monkeypatch):
+    """default_sources is derived, so registering an agent cannot leave it stale."""
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.agents.registry import SOURCE_NAMES
+
     s = Settings()
-    assert s.default_sources == [
-        "hackernews",
-        "github",
-        "newsapi",
-        "reddit",
-        "devto",
-        "lobsters",
-        "arxiv",
-    ]
+    assert s.default_sources == SOURCE_NAMES
+
+
+def test_default_sources_is_an_independent_copy(monkeypatch):
+    """Mutating one instance's list must not corrupt the registry or the next one."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.agents.registry import SOURCE_NAMES
+
+    s = Settings()
+    s.default_sources.append("bogus")
+    assert "bogus" not in SOURCE_NAMES
+    assert "bogus" not in Settings().default_sources
 
 
 def test_request_timeout_defaults_to_10(monkeypatch):
