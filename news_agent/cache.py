@@ -9,6 +9,7 @@ its own mtime for the TTL check.
 
 import hashlib
 import logging
+import os
 from pathlib import Path
 from time import time
 
@@ -52,4 +53,10 @@ def save_digest_to_cache(output_dir: Path, sources: list[str], digest: DigestOut
     """Persist a digest so the next run within the TTL window can reuse it."""
     path = _cache_path(output_dir, sources)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(digest.model_dump_json(indent=2))
+    # Write-then-rename: an interrupted run (Ctrl-C, OOM) would otherwise leave
+    # a half-written file that every later run has to detect and discard.
+    # os.replace is atomic within a filesystem, and the temp file is a sibling
+    # so the rename never crosses one.
+    tmp_path = path.with_suffix(".tmp")
+    tmp_path.write_text(digest.model_dump_json(indent=2))
+    os.replace(tmp_path, path)

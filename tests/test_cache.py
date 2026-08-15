@@ -54,3 +54,13 @@ def test_cache_key_is_order_independent(tmp_path):
     save_digest_to_cache(tmp_path, ["hackernews", "github"], _digest())
 
     assert load_cached_digest(tmp_path, ["github", "hackernews"], ttl_seconds=3600) is not None
+
+
+def test_save_digest_leaves_no_temp_file_behind(tmp_path):
+    """The write is staged through a sibling temp file and renamed atomically."""
+    from news_agent.cache import save_digest_to_cache
+
+    save_digest_to_cache(tmp_path, ["hackernews"], _digest())
+
+    assert list(tmp_path.glob("**/*.tmp")) == []
+    assert len(list(tmp_path.glob("**/*.json"))) == 1
