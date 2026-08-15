@@ -364,3 +364,20 @@ def test_sources_command_flags_newsapi_without_a_key(monkeypatch):
 
     get_settings.cache_clear()
     assert "NEWSAPI_KEY" in result.output
+
+
+def test_config_check_shows_non_secret_settings(monkeypatch):
+    """OUTPUT_DIR and the timeouts change behaviour and were invisible."""
+    from news_agent.cli import app
+    from news_agent.config import get_settings
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    get_settings.cache_clear()
+
+    result = runner.invoke(app, ["config", "check"])
+
+    get_settings.cache_clear()
+    assert result.exit_code == 0
+    assert "OUTPUT_DIR" in result.output
+    assert "REQUEST_TIMEOUT" in result.output
+    assert "CACHE_TTL" in result.output
