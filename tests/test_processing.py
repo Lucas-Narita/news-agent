@@ -101,3 +101,52 @@ def test_deduplicate_keeps_genuinely_different_paths():
     b = Article(title="B", url="https://example.com/b", source="hackernews")
 
     assert len(deduplicate([a, b])) == 2
+
+
+def test_rank_by_score_breaks_ties_deterministically():
+    """Equal scores must not depend on which agent finished first."""
+    from datetime import datetime, timezone
+
+    from news_agent.processing import rank_by_score
+
+    older = Article(
+        title="Older",
+        url="https://example.com/older",
+        source="hackernews",
+        score=100,
+        published_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+    )
+    newer = Article(
+        title="Newer",
+        url="https://example.com/newer",
+        source="reddit",
+        score=100,
+        published_at=datetime(2026, 6, 1, tzinfo=timezone.utc),
+    )
+
+    assert rank_by_score([older, newer]) == rank_by_score([newer, older])
+    assert rank_by_score([older, newer])[0].title == "Newer"
+
+
+def test_rank_by_score_tolerates_naive_timestamps():
+    """A source returning a naive datetime must not break the sort."""
+    from datetime import datetime, timezone
+
+    from news_agent.processing import rank_by_score
+
+    naive = Article(
+        title="Naive",
+        url="https://example.com/naive",
+        source="lobsters",
+        score=5,
+        published_at=datetime(2026, 1, 1),
+    )
+    aware = Article(
+        title="Aware",
+        url="https://example.com/aware",
+        source="hackernews",
+        score=5,
+        published_at=datetime(2026, 2, 1, tzinfo=timezone.utc),
+    )
+
+    assert len(rank_by_score([naive, aware])) == 2

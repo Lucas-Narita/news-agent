@@ -5,6 +5,7 @@ pure (no I/O, no mutation) means the orchestrator's data-quality rules are unit
 testable without touching the network.
 """
 
+from datetime import datetime, timezone
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from news_agent.schemas.models import Article
@@ -37,6 +38,30 @@ def _score_key(article: Article) -> tuple[bool, int]:
     return (article.score is not None, article.score or 0)
 
 
+def _published_key(article: Article) -> datetime:
+    """Publication time as a comparable, always-aware value.
+
+    Sources are inconsistent about timezones and arXiv omits a score entirely,
+    so a naive value is normalized to UTC rather than blowing up the sort.
+    """
+    published = article.published_at
+    if published is None:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    if published.tzinfo is None:
+        return published.replace(tzinfo=timezone.utc)
+    return published
+
+
+def _rank_key(article: Article) -> tuple[bool, int, datetime, str]:
+    """Full ordering key: score, then recency, then URL as a final tiebreak.
+
+    Score alone left ties resolved by whichever agent's results happened to be
+    appended first, which varies run to run under asyncio.gather. The extra
+    fields make the ranked list reproducible for the same input.
+    """
+    return (*_score_key(article), _published_key(article), article.url)
+
+
 def deduplicate(articles: list[Article]) -> list[Article]:
     """Collapse articles sharing a URL, keeping the highest-scored copy.
 
@@ -56,5 +81,9 @@ def deduplicate(articles: list[Article]) -> list[Article]:
 
 
 def rank_by_score(articles: list[Article]) -> list[Article]:
-    """Return a new list ordered by score, highest first, unscored items last."""
-    return sorted(articles, key=_score_key, reverse=True)
+    """Return a new list ordered by score, highest first, unscored items last.
+
+    Ties break by recency and then URL so the same input always ranks the same
+    way, regardless of the order agents completed in.
+    """
+    return sorted(articles, key=_rank_key, reverse=True)
