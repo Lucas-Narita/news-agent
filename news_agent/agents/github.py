@@ -13,6 +13,21 @@ LIMIT = 10
 TRENDING_WINDOW_DAYS = 7
 
 
+def _parse_repo(repo: dict, source: str) -> Article | None:
+    """Build an Article from one repository, or None if the payload is malformed."""
+    try:
+        return Article(
+            title=repo["full_name"],
+            url=repo["html_url"],
+            source=source,
+            score=repo.get("stargazers_count"),
+            summary=repo.get("description"),
+            published_at=datetime.fromisoformat(repo["created_at"].replace("Z", "+00:00")),
+        )
+    except (KeyError, ValueError, TypeError, AttributeError):
+        return None
+
+
 class GitHubAgent(BaseAgent):
     name = "github"
 
@@ -42,14 +57,4 @@ class GitHubAgent(BaseAgent):
         resp = await with_retry(_get)
         repos = resp.json()["items"]
 
-        return [
-            Article(
-                title=repo["full_name"],
-                url=repo["html_url"],
-                source=self.name,
-                score=repo["stargazers_count"],
-                summary=repo.get("description"),
-                published_at=datetime.fromisoformat(repo["created_at"].replace("Z", "+00:00")),
-            )
-            for repo in repos
-        ]
+        return [article for repo in repos if (article := _parse_repo(repo, self.name)) is not None]

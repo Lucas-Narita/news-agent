@@ -115,3 +115,19 @@ async def test_github_retries_on_transient_error(monkeypatch):
 
     assert result.error is None
     assert len(result.articles) == 10
+
+
+async def test_github_skips_repos_missing_required_fields():
+    """One malformed repo in the page must not discard the other nine."""
+    from news_agent.agents.github import GitHubAgent
+
+    broken = {"full_name": "owner/broken"}  # no html_url, no created_at
+    payload = {"items": [_make_repo(1), broken], "total_count": 2}
+
+    with respx.mock:
+        respx.get(GITHUB_API).mock(return_value=httpx.Response(200, json=payload))
+
+        result = await GitHubAgent().fetch()
+
+    assert result.error is None
+    assert len(result.articles) == 1
