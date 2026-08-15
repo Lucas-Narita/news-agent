@@ -26,10 +26,26 @@ def test_format_articles_groups_by_source():
         _article("github", title="owner/repo"),
     ]
     result = format_articles(articles)
-    assert "## Hackernews" in result
-    assert "## Github" in result
+    assert "## Hacker News" in result
+    assert "## GitHub" in result
     assert "HN Story" in result
     assert "owner/repo" in result
+
+
+def test_format_articles_uses_real_source_names():
+    """Slugs render the way the communities spell themselves, not capitalize()."""
+    from news_agent.output.markdown import format_articles
+
+    result = format_articles([_article("devto"), _article("arxiv")])
+    assert "## Dev.to" in result
+    assert "## arXiv" in result
+
+
+def test_source_label_falls_back_to_capitalized_slug():
+    """An unregistered source still renders readably instead of crashing."""
+    from news_agent.output.markdown import source_label
+
+    assert source_label("mastodon") == "Mastodon"
 
 
 def test_format_articles_github_shows_stars():

@@ -1,5 +1,23 @@
 from news_agent.schemas.models import Article
 
+# str.capitalize() mangles the names these communities actually use
+# ("Hackernews", "Devto", "Arxiv"). The digest is read by humans and fed to the
+# LLM as context, so both benefit from the real spelling.
+SOURCE_LABELS = {
+    "hackernews": "Hacker News",
+    "github": "GitHub",
+    "newsapi": "NewsAPI",
+    "reddit": "Reddit",
+    "devto": "Dev.to",
+    "lobsters": "Lobsters",
+    "arxiv": "arXiv",
+}
+
+
+def source_label(source: str) -> str:
+    """Human-facing name for a source, falling back to a capitalized slug."""
+    return SOURCE_LABELS.get(source, source.capitalize())
+
 
 def format_articles(articles: list[Article]) -> str:
     """Render a list of articles as a Markdown string grouped by source.
@@ -16,7 +34,7 @@ def format_articles(articles: list[Article]) -> str:
 
     sections = []
     for source, items in by_source.items():
-        lines = [f"## {source.capitalize()}"]
+        lines = [f"## {source_label(source)}"]
         for a in items:
             if source == "github" and a.score is not None:
                 line = f"- **{a.title}** ★{a.score} — {a.url}"
