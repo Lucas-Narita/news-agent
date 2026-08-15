@@ -29,15 +29,17 @@ class AgentResult(BaseModel):
 
 
 class AgentStatus(BaseModel):
-    name: str
+    name: str = Field(min_length=1)
     ok: bool
-    article_count: int
+    # Counts are cardinalities: a negative value is always a bug upstream, and
+    # catching it here beats rendering "-3 articles" in the digest footer.
+    article_count: int = Field(ge=0)
 
 
 class DigestOutput(BaseModel):
     narrative: str
     sources_used: list[str]
-    total_articles: int
+    total_articles: int = Field(ge=0)
     generated_at: datetime
     articles: list[Article] = Field(default_factory=list)
     agents: list[AgentStatus] = Field(default_factory=list)

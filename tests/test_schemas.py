@@ -56,3 +56,20 @@ def test_digest_output():
     )
     assert d.total_articles == 10
     assert "hackernews" in d.sources_used
+
+
+def test_agent_status_rejects_a_negative_article_count():
+    from news_agent.schemas.models import AgentStatus
+
+    with pytest.raises(ValidationError):
+        AgentStatus(name="hackernews", ok=True, article_count=-1)
+
+
+def test_digest_output_rejects_a_negative_total():
+    with pytest.raises(ValidationError):
+        DigestOutput(
+            narrative="x",
+            sources_used=[],
+            total_articles=-1,
+            generated_at=datetime.now(),
+        )
