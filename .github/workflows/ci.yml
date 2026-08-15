@@ -8,10 +8,20 @@ on:
 permissions:
   contents: read
 
+# Pushing twice to a PR used to leave both runs racing for the same runners.
+# Superseded runs are cancelled; main is keyed separately so its history stays
+# complete.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   test:
     name: lint & test (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    # A mocked suite finishes in seconds; anything past this is a hung job
+    # holding a runner, not slow tests.
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
