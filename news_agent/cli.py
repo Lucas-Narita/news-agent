@@ -63,7 +63,7 @@ def config_check():
         for error in e.errors():
             field = error["loc"][0] if error["loc"] else "unknown"
             console.print(f"  [red]x[/red] {field}: {error['msg']}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     table = Table(title="Configuration Status")
     table.add_column("Variable", style="cyan")
@@ -191,7 +191,7 @@ def run(
             err_console.print(
                 "[red]Configuration error. Run 'news-agent config check' for details.[/red]"
             )
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     active_sources = resolve_sources(sources, settings)
 
@@ -212,7 +212,7 @@ def run(
             digest = asyncio.run(run_digest(active_sources, settings, limit=limit))
         except Exception as e:
             err_console.print(f"[red]Error: {e}[/red]")
-            raise typer.Exit(code=1)
+            raise typer.Exit(code=1) from None
 
         if cache:
             save_digest_to_cache(settings.output_dir, active_sources, digest)

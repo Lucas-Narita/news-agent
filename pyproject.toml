@@ -70,9 +70,12 @@ line-length = 100
 [tool.ruff.lint]
 # UP/C4/SIM catch the modernization and simplification drift that accumulates
 # in a codebase supporting 3.11+ but written against older habits.
-select = ["E", "F", "I", "UP", "C4", "SIM"]
+select = ["E", "F", "I", "UP", "C4", "SIM", "B"]
 ignore = [
     # Typer resolves CLI parameter types from the annotation; str+Enum is the
     # documented pattern and StrEnum changes how the choices are rendered.
     "UP042",
+    # typer.Option() in a parameter default IS the Typer API, not a mutable
+    # default argument bug.
+    "B008",
 ]
