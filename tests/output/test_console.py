@@ -43,3 +43,25 @@ def test_render_digest_shows_article_count_and_sources():
 def test_render_digest_no_sources_still_prints_narrative():
     out = _render(_digest(narrative="No articles available.", sources=(), total=0))
     assert "No articles available" in out
+
+
+def _digest_with_agents(*statuses: tuple[str, bool]) -> DigestOutput:
+    from news_agent.schemas.models import AgentStatus
+
+    digest = _digest()
+    digest.agents = [
+        AgentStatus(name=name, ok=ok, article_count=1 if ok else 0) for name, ok in statuses
+    ]
+    return digest
+
+
+def test_render_digest_names_unavailable_sources():
+    """A thin digest should say which source was down, not just look empty."""
+    out = _render(_digest_with_agents(("hackernews", True), ("arxiv", False)))
+    assert "Sources unavailable" in out
+    assert "arxiv" in out
+
+
+def test_render_digest_omits_the_notice_when_every_source_worked():
+    out = _render(_digest_with_agents(("hackernews", True), ("github", True)))
+    assert "Sources unavailable" not in out

@@ -16,3 +16,9 @@ def render_digest(digest: DigestOutput, console: Console | None = None) -> None:
     if digest.sources_used:
         meta = f"{digest.total_articles} articles | sources: {', '.join(digest.sources_used)}"
         console.print(Panel(meta, expand=False, border_style="dim"))
+
+    # A source that failed contributed nothing to sources_used, so without this
+    # the digest just looks thin — with no hint that arXiv was down.
+    failed = [agent.name for agent in digest.agents if not agent.ok]
+    if failed:
+        console.print(f"[yellow]Sources unavailable:[/yellow] {', '.join(failed)}")
