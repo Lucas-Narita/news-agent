@@ -17,7 +17,7 @@ def _err_result(source: str) -> AgentResult:
 
 
 async def test_run_digest_skips_unregistered_source_name(monkeypatch):
-    """An unknown source name must be silently dropped, not raise KeyError."""
+    """An unknown source name must be dropped without raising KeyError."""
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     from news_agent.config import get_settings
     from news_agent.orchestrator import run_digest
@@ -392,3 +392,38 @@ async def test_run_digest_applies_limit_to_top_ranked(monkeypatch):
     assert result.total_articles == 2
     ranked = mock_llm.call_args.args[0]
     assert [a.score for a in ranked] == [4, 3]  # only the top 2 by score survive
+
+
+async def test_run_digest_warns_about_unregistered_source_names(monkeypatch, caplog):
+    """Dropping a name in silence made a thin digest look like a quiet day."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.config import get_settings
+    from news_agent.orchestrator import run_digest
+
+    settings = get_settings()
+
+    with caplog.at_level("WARNING", logger="news_agent.orchestrator"):
+        await run_digest(["not-a-real-source"], settings)
+
+    assert "not-a-real-source" in caplog.text
+
+
+async def test_run_digest_logs_a_pipeline_summary(monkeypatch, caplog):
+    """--verbose should explain how many articles survived dedup."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.config import get_settings
+    from news_agent.orchestrator import run_digest
+
+    settings = get_settings()
+
+    with (
+        patch(
+            "news_agent.agents.hackernews.HackerNewsAgent.fetch",
+            new=AsyncMock(return_value=_ok_result("hackernews", n=3)),
+        ),
+        patch("news_agent.orchestrator.generate_narrative", new=AsyncMock(return_value="# D")),
+        caplog.at_level("INFO", logger="news_agent.orchestrator"),
+    ):
+        await run_digest(["hackernews"], settings)
+
+    assert "left after dedup" in caplog.text
