@@ -6,6 +6,7 @@ import anthropic
 from news_agent.config import Settings
 from news_agent.llm.prompts import SYSTEM_PROMPT, build_user_message
 from news_agent.output.markdown import format_articles
+from news_agent.retry import with_retry
 from news_agent.schemas.models import Article
 
 logger = logging.getLogger(__name__)
@@ -22,23 +23,30 @@ async def generate_narrative(articles: list[Article], settings: Settings) -> str
     sources = sorted({a.source for a in articles})
 
     client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
-    response = await client.messages.create(
-        model=settings.anthropic_model,
-        max_tokens=settings.max_tokens,
-        system=[
-            {
-                "type": "text",
-                "text": SYSTEM_PROMPT,
-                "cache_control": {"type": "ephemeral"},
-            }
-        ],
-        messages=[
-            {
-                "role": "user",
-                "content": build_user_message(articles_markdown, today, sources),
-            }
-        ],
-    )
+
+    async def _create():
+        return await client.messages.create(
+            model=settings.anthropic_model,
+            max_tokens=settings.max_tokens,
+            system=[
+                {
+                    "type": "text",
+                    "text": SYSTEM_PROMPT,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ],
+            messages=[
+                {
+                    "role": "user",
+                    "content": build_user_message(articles_markdown, today, sources),
+                }
+            ],
+        )
+
+    # Every source is already retried; the single LLM call was not, so a
+    # transient overload threw away a complete fetch and fell back to the raw
+    # list. The cached system prompt makes a retry cheap.
+    response = await with_retry(_create)
     if response.stop_reason == "max_tokens":
         logger.warning(
             "narrative generation truncated at max_tokens=%d; digest may be incomplete",

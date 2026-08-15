@@ -168,3 +168,20 @@ async def test_generate_narrative_joins_multiple_text_blocks(monkeypatch):
         result = await generate_narrative([_make_article()], Settings())
 
     assert result == "# Digest\n## Trends"
+
+
+async def test_generate_narrative_retries_a_transient_api_failure(monkeypatch):
+    """A transient overload should not throw away a complete fetch."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.setattr("news_agent.retry.sleep", AsyncMock())
+    from news_agent.config import Settings
+
+    mock_create = AsyncMock(side_effect=[ConnectionError("overloaded"), _mock_response()])
+    with patch("news_agent.llm.client.anthropic.AsyncAnthropic") as MockClient:
+        MockClient.return_value.messages.create = mock_create
+        from news_agent.llm.client import generate_narrative
+
+        result = await generate_narrative([_make_article()], Settings())
+
+    assert mock_create.await_count == 2
+    assert result == "# Digest\nTop stories."
