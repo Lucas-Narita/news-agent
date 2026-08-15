@@ -9,7 +9,7 @@ Contém todas as decisões de arquitetura tomadas antes da criação do repo.
 
 **news-agent** — API Orchestration Agent com arquitetura multi-agent.
 
-Agent CLI que agrega notícias e tendências de tech em tempo real (HackerNews, GitHub Trending, NewsAPI), processa com Claude API, e gera um digest narrativo em Markdown + terminal.
+Agent CLI que agrega notícias e tendências de tech em tempo real (HackerNews, GitHub Trending, NewsAPI, Reddit, Dev.to, Lobsters, arXiv), processa com Claude API, e gera um digest narrativo em Markdown + terminal.
 
 **Objetivo:** projeto de portfólio público para posicionamento como AI Agent Engineer.
 **Proprietário:** Lucas Narita
@@ -183,7 +183,7 @@ Todas as seções de design foram implementadas e testadas:
 
 - [x] Qualidade de dados: deduplicação por URL + ranking por score (`processing.py`) + flag `--limit`
 - [x] Resiliência: retry com backoff exponencial (`retry.py`), timeout configurável (`REQUEST_TIMEOUT`), logging estruturado (`logging_config.py`, `--verbose`)
-- [x] Fontes adicionais: Reddit, Dev.to, Lobsters (total de 6, todas via `BaseAgent`)
+- [x] Fontes adicionais: Reddit, Dev.to, Lobsters, arXiv (total de 7, todas via `BaseAgent`)
 - [x] Output composável: `--format json` (digest serializado, stdout limpo para pipe)
 - [x] Determinismo: seções ordenadas pela ordem declarada das fontes e desempate de ranking
   por recência + URL — a mesma entrada gera sempre o mesmo Markdown
