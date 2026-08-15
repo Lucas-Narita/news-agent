@@ -118,7 +118,10 @@ def run(
     ),
     no_file: bool = typer.Option(False, "--no-file", help="Print to terminal only, skip .md file"),
     limit: Optional[int] = typer.Option(
-        None, "--limit", help="Keep only the top N highest-ranked articles"
+        None,
+        "--limit",
+        min=1,
+        help="Keep only the top N highest-ranked articles",
     ),
     verbose: bool = typer.Option(False, "--verbose", help="Show INFO-level logs"),
     output_format: OutputFormat = typer.Option(

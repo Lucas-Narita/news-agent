@@ -306,3 +306,12 @@ def test_run_does_not_warn_for_valid_sources(monkeypatch):
         result = runner.invoke(app, ["run", "--no-file", "--sources", "hackernews"])
 
     assert "Unknown source" not in result.output
+
+
+def test_run_rejects_non_positive_limit():
+    """--limit 0 silently produced an empty digest; it should be a usage error."""
+    from news_agent.cli import app
+
+    result = runner.invoke(app, ["run", "--no-file", "--limit", "0"])
+
+    assert result.exit_code != 0
