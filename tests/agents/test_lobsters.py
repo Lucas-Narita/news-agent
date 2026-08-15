@@ -107,3 +107,15 @@ async def test_lobsters_retries_on_transient_error():
 
     assert result.error is None
     assert len(result.articles) == 3
+
+
+async def test_lobsters_caps_results_at_limit():
+    """Lobsters has no per_page parameter, so the cap must be applied client-side."""
+    from news_agent.agents.lobsters import LIMIT, LobstersAgent
+
+    with respx.mock:
+        respx.get(LOBSTERS_URL).mock(return_value=_lobsters_response(LIMIT + 15))
+
+        result = await LobstersAgent().fetch()
+
+    assert len(result.articles) == LIMIT

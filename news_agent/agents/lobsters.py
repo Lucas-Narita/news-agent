@@ -7,6 +7,10 @@ from news_agent.retry import with_retry
 from news_agent.schemas.models import Article
 
 LOBSTERS_URL = "https://lobste.rs/hottest.json"
+# Lobsters has no per_page parameter, so the cap is applied client-side. Every
+# other agent tops out at 10; leaving this one unbounded let a single source
+# return 25 stories and dominate the ranked list.
+LIMIT = 10
 
 
 def _parse_story(story: dict, source: str) -> Article | None:
@@ -41,7 +45,7 @@ class LobstersAgent(BaseAgent):
             return resp
 
         resp = await with_retry(_get)
-        stories = resp.json()
+        stories = resp.json()[:LIMIT]
 
         return [
             article for story in stories if (article := _parse_story(story, self.name)) is not None
