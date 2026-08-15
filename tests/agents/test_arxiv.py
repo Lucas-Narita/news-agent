@@ -210,3 +210,20 @@ async def test_arxiv_published_at_is_timezone_aware():
         result = await agent.fetch()
 
     assert result.articles[0].published_at.tzinfo is not None
+
+
+async def test_arxiv_queries_the_configured_category(monkeypatch):
+    """The same agent should serve cs.CR or stat.ML without a code change."""
+    monkeypatch.setenv("ARXIV_CATEGORY", "cs.CR")
+    from news_agent.agents.arxiv import ArxivAgent
+
+    with respx.mock:
+        route = respx.get(ARXIV_URL).mock(
+            return_value=httpx.Response(200, text=_feed(_entry_xml(1)))
+        )
+
+        await ArxivAgent().fetch()
+
+    assert "cat%3Acs.CR" in str(route.calls.last.request.url) or "cat:cs.CR" in str(
+        route.calls.last.request.url
+    )

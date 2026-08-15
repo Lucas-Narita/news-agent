@@ -5,11 +5,12 @@ import defusedxml.ElementTree as safe_ET
 import httpx
 
 from news_agent.agents.base import BaseAgent
+from news_agent.config import get_settings
 from news_agent.retry import with_retry
 from news_agent.schemas.models import Article
 
 ARXIV_URL = "https://export.arxiv.org/api/query"
-SEARCH_QUERY = "cat:cs.AI"
+DEFAULT_CATEGORY = "cs.AI"
 MAX_RESULTS = 10
 
 ATOM_NS = {"atom": "http://www.w3.org/2005/Atom"}
@@ -69,7 +70,7 @@ class ArxivAgent(BaseAgent):
             resp = await client.get(
                 ARXIV_URL,
                 params={
-                    "search_query": SEARCH_QUERY,
+                    "search_query": f"cat:{get_settings().arxiv_category}",
                     "sortBy": "submittedDate",
                     "sortOrder": "descending",
                     "max_results": MAX_RESULTS,
