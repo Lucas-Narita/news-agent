@@ -24,6 +24,12 @@ console = Console()
 err_console = Console(stderr=True)  # diagnostics go to stderr, keeping stdout clean
 
 
+# Only NewsAPI is hard-gated on a key; GITHUB_TOKEN merely raises the rate
+# limit, so github stays "ready" without one.
+SOURCE_REQUIREMENTS = {"newsapi": "NEWSAPI_KEY"}
+SOURCE_SETTING = {"newsapi": "newsapi_key"}
+
+
 class OutputFormat(str, Enum):
     markdown = "markdown"
     json = "json"
@@ -80,6 +86,32 @@ def config_check():
         table.add_row("GITHUB_TOKEN", "[green]OK[/green]", "***" + settings.github_token[-4:])
     else:
         table.add_row("GITHUB_TOKEN", "[yellow]OPTIONAL[/yellow]", "not set")
+
+    console.print(table)
+
+
+@app.command("sources")
+def list_sources():
+    """List every registered source and whether it is usable right now."""
+    try:
+        settings = get_settings()
+    except ValidationError:
+        settings = None
+
+    table = Table(title="Available Sources")
+    table.add_column("Source", style="cyan")
+    table.add_column("Status")
+    table.add_column("Requires")
+
+    for name in SOURCE_NAMES:
+        requires = SOURCE_REQUIREMENTS.get(name, "")
+        if not requires:
+            status = "[green]ready[/green]"
+        elif settings is not None and getattr(settings, SOURCE_SETTING[name], None):
+            status = "[green]ready[/green]"
+        else:
+            status = "[yellow]needs key[/yellow]"
+        table.add_row(name, status, requires or "nothing")
 
     console.print(table)
 

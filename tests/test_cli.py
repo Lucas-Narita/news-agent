@@ -337,3 +337,30 @@ def test_output_filename_follows_the_digest_timestamp(tmp_path, monkeypatch):
     get_settings.cache_clear()
     assert result.exit_code == 0
     assert (tmp_path / "digest-2026-01-02-03.md").exists()
+
+
+def test_sources_command_lists_every_registered_source(monkeypatch):
+    from news_agent.agents.registry import SOURCE_NAMES
+    from news_agent.cli import app
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    result = runner.invoke(app, ["sources"])
+
+    assert result.exit_code == 0
+    for name in SOURCE_NAMES:
+        assert name in result.output
+
+
+def test_sources_command_flags_newsapi_without_a_key(monkeypatch):
+    """newsapi is the only source hard-gated on a key; it must say so."""
+    from news_agent.cli import app
+    from news_agent.config import get_settings
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.delenv("NEWSAPI_KEY", raising=False)
+    get_settings.cache_clear()
+
+    result = runner.invoke(app, ["sources"])
+
+    get_settings.cache_clear()
+    assert "NEWSAPI_KEY" in result.output
