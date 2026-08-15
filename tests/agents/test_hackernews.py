@@ -137,3 +137,23 @@ async def test_hackernews_skips_item_fetch_failure():
     assert len(result.articles) == 2
     assert result.articles[0].title == "Story 1"
     assert result.articles[1].title == "Story 3"
+
+
+async def test_hackernews_skips_items_missing_required_fields():
+    """A story without a title must be dropped, not kill the whole source."""
+    from news_agent.agents.hackernews import HackerNewsAgent
+
+    good = _make_item(1)
+    broken = {"url": "https://example.com/broken", "score": 5}  # no title, no time
+
+    with respx.mock:
+        respx.get(f"{HN_BASE}/topstories.json").mock(
+            return_value=httpx.Response(200, json=[1, 2])
+        )
+        respx.get(f"{HN_BASE}/item/1.json").mock(return_value=httpx.Response(200, json=good))
+        respx.get(f"{HN_BASE}/item/2.json").mock(return_value=httpx.Response(200, json=broken))
+
+        result = await HackerNewsAgent().fetch()
+
+    assert result.error is None
+    assert len(result.articles) == 1

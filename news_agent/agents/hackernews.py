@@ -14,6 +14,26 @@ HN_BASE = "https://hacker-news.firebaseio.com/v0"
 LIMIT = 10
 
 
+def _parse_item(item: dict, source: str) -> Article | None:
+    """Build an Article from one HN item, or None if the item is malformed.
+
+    Matches the per-item guard the other agents already use: a story missing
+    `title` or `time` used to raise and take the whole source down with it.
+    """
+    try:
+        if not item.get("url"):
+            return None
+        return Article(
+            title=item["title"],
+            url=item["url"],
+            source=source,
+            score=item.get("score"),
+            published_at=datetime.fromtimestamp(item["time"], tz=timezone.utc),
+        )
+    except (KeyError, ValueError, TypeError, OSError):
+        return None
+
+
 class HackerNewsAgent(BaseAgent):
     name = "hackernews"
 
@@ -40,13 +60,7 @@ class HackerNewsAgent(BaseAgent):
         items = await asyncio.gather(*[fetch_item(i) for i in ids])
 
         return [
-            Article(
-                title=item["title"],
-                url=item["url"],
-                source=self.name,
-                score=item.get("score"),
-                published_at=datetime.fromtimestamp(item["time"], tz=timezone.utc),
-            )
+            article
             for item in items
-            if item and item.get("url")
+            if item and (article := _parse_item(item, self.name)) is not None
         ]
