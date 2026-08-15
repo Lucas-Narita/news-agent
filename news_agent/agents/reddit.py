@@ -7,7 +7,6 @@ from news_agent.retry import with_retry
 from news_agent.schemas.models import Article
 
 REDDIT_URL = "https://www.reddit.com/r/programming/hot.json"
-USER_AGENT = "news-agent/0.1 (tech digest bot)"
 LIMIT = 10
 
 
@@ -42,11 +41,8 @@ class RedditAgent(BaseAgent):
         """
 
         async def _get():
-            resp = await client.get(
-                REDDIT_URL,
-                params={"limit": LIMIT},
-                headers={"User-Agent": USER_AGENT},
-            )
+            # User-Agent comes from the shared client configured in BaseAgent.
+            resp = await client.get(REDDIT_URL, params={"limit": LIMIT})
             resp.raise_for_status()
             return resp
 

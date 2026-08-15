@@ -1,10 +1,28 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
+from importlib.metadata import PackageNotFoundError, version
 
 import httpx
 
 from news_agent.config import get_settings
 from news_agent.schemas.models import AgentResult, Article
+
+
+def _user_agent() -> str:
+    """Identify the client to every upstream API.
+
+    Reddit rejects the default httpx User-Agent outright, and the others treat
+    an identifiable client more kindly under rate limiting. Setting it once on
+    the shared client means a new agent inherits it for free.
+    """
+    try:
+        release = version("news-agent")
+    except PackageNotFoundError:  # pragma: no cover - only when running from source
+        release = "dev"
+    return f"news-agent/{release} (+https://github.com/Lucas-Narita/news-agent)"
+
+
+USER_AGENT = _user_agent()
 
 
 class BaseAgent(ABC):
@@ -40,11 +58,16 @@ class BaseAgent(ABC):
 
         settings = get_settings()
         try:
-            async with httpx.AsyncClient(timeout=settings.request_timeout) as client:
+            async with httpx.AsyncClient(
+                timeout=settings.request_timeout,
+                headers={"User-Agent": USER_AGENT},
+            ) as client:
                 articles = await self._fetch_articles(client)
         except Exception as e:
             return AgentResult(
                 source=self.name, articles=[], fetched_at=datetime.now(timezone.utc), error=str(e)
             )
 
-        return AgentResult(source=self.name, articles=articles, fetched_at=datetime.now(timezone.utc))
+        return AgentResult(
+            source=self.name, articles=articles, fetched_at=datetime.now(timezone.utc)
+        )
