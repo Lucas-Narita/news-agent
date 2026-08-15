@@ -8,7 +8,6 @@ its own mtime for the TTL check.
 """
 
 import hashlib
-import json
 import logging
 from pathlib import Path
 from time import time
@@ -53,4 +52,4 @@ def save_digest_to_cache(output_dir: Path, sources: list[str], digest: DigestOut
     """Persist a digest so the next run within the TTL window can reuse it."""
     path = _cache_path(output_dir, sources)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(json.loads(digest.model_dump_json()), indent=2))
+    path.write_text(digest.model_dump_json(indent=2))
