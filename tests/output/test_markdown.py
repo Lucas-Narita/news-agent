@@ -79,3 +79,15 @@ def test_format_articles_no_score_no_decoration():
     result = format_articles(articles)
     assert "(score:" not in result
     assert "★" not in result
+
+
+def test_format_articles_orders_sections_deterministically():
+    """Whichever agent finishes first, the digest must render identically."""
+    from news_agent.output.markdown import format_articles
+
+    articles = [_article("arxiv"), _article("github"), _article("hackernews")]
+    result = format_articles(articles)
+    shuffled = format_articles(list(reversed(articles)))
+
+    assert result == shuffled
+    assert result.index("## Hacker News") < result.index("## GitHub") < result.index("## arXiv")

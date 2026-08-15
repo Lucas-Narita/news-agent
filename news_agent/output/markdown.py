@@ -14,6 +14,14 @@ SOURCE_LABELS = {
 }
 
 
+_SECTION_ORDER = {name: index for index, name in enumerate(SOURCE_LABELS)}
+
+
+def _section_rank(source: str) -> tuple[int, str]:
+    """Sort key placing known sources in declared order, unknown ones last."""
+    return (_SECTION_ORDER.get(source, len(_SECTION_ORDER)), source)
+
+
 def source_label(source: str) -> str:
     """Human-facing name for a source, falling back to a capitalized slug."""
     return SOURCE_LABELS.get(source, source.capitalize())
@@ -32,8 +40,14 @@ def format_articles(articles: list[Article]) -> str:
     for article in articles:
         by_source.setdefault(article.source, []).append(article)
 
+    # Sections follow the declared source order rather than whichever agent
+    # happened to finish first, so two runs over the same articles produce a
+    # byte-identical digest — which also keeps the LLM's context stable.
+    ordered_sources = sorted(by_source, key=_section_rank)
+
     sections = []
-    for source, items in by_source.items():
+    for source in ordered_sources:
+        items = by_source[source]
         lines = [f"## {source_label(source)}"]
         for a in items:
             if source == "github" and a.score is not None:
