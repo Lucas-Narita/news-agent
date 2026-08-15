@@ -25,7 +25,9 @@ class Settings(BaseSettings):
     github_token: str | None = None
     output_dir: Path = Path("output")
     default_sources: list[str] = Field(default_factory=_default_sources)
-    request_timeout: float = 10.0
+    # gt=0 turns a typo like REQUEST_TIMEOUT=0 into a startup error instead of
+    # httpx treating it as "fail immediately" on every source.
+    request_timeout: float = Field(default=10.0, gt=0)
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

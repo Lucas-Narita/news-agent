@@ -73,6 +73,14 @@ def test_request_timeout_configurable(monkeypatch):
     assert s.request_timeout == 3.5
 
 
+@pytest.mark.parametrize("bad_value", ["0", "-1"])
+def test_request_timeout_must_be_positive(monkeypatch, bad_value):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.setenv("REQUEST_TIMEOUT", bad_value)
+    with pytest.raises(ValidationError):
+        Settings()
+
+
 def test_get_settings_is_cached(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     s1 = get_settings()
