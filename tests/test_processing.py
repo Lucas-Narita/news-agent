@@ -66,3 +66,38 @@ def test_rank_by_score_puts_none_last():
 
     assert result[0].score == 1
     assert result[1].score is None
+
+
+def test_canonical_url_strips_tracking_and_trailing_slash():
+    from news_agent.processing import canonical_url
+
+    assert canonical_url("HTTPS://Example.com/post/?utm_source=hn&id=7") == (
+        "https://example.com/post?id=7"
+    )
+
+
+def test_deduplicate_collapses_urls_differing_only_by_tracking():
+    """The same story shared with campaign params is still the same story."""
+    from news_agent.processing import deduplicate
+
+    plain = Article(title="Story", url="https://example.com/post", source="hackernews", score=10)
+    tagged = Article(
+        title="Story",
+        url="https://example.com/post/?utm_source=reddit",
+        source="reddit",
+        score=50,
+    )
+
+    result = deduplicate([plain, tagged])
+
+    assert len(result) == 1
+    assert result[0].score == 50
+
+
+def test_deduplicate_keeps_genuinely_different_paths():
+    from news_agent.processing import deduplicate
+
+    a = Article(title="A", url="https://example.com/a", source="hackernews")
+    b = Article(title="B", url="https://example.com/b", source="hackernews")
+
+    assert len(deduplicate([a, b])) == 2
