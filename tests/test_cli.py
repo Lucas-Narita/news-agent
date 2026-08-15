@@ -373,3 +373,15 @@ def test_config_check_shows_non_secret_settings(monkeypatch):
     assert "OUTPUT_DIR" in result.output
     assert "REQUEST_TIMEOUT" in result.output
     assert "CACHE_TTL" in result.output
+
+
+def test_output_dir_flag_overrides_the_setting(tmp_path):
+    """A one-off run elsewhere should not require exporting OUTPUT_DIR."""
+    from news_agent.cli import app
+
+    target = tmp_path / "elsewhere"
+    with patch("news_agent.cli.run_digest", new=AsyncMock(return_value=_mock_digest())):
+        result = runner.invoke(app, ["run", "--sources", "hackernews", "--output-dir", str(target)])
+
+    assert result.exit_code == 0
+    assert list(target.glob("digest-*.md"))

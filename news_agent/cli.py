@@ -1,6 +1,7 @@
 import asyncio
 from enum import Enum
 from importlib.metadata import version
+from pathlib import Path
 
 import typer
 from pydantic import ValidationError
@@ -160,6 +161,11 @@ def run(
         min=1,
         help="Keep only the top N highest-ranked articles",
     ),
+    output_dir: Path | None = typer.Option(
+        None,
+        "--output-dir",
+        help="Directory to write the digest into [default: OUTPUT_DIR]",
+    ),
     verbose: bool = typer.Option(False, "--verbose", help="Show INFO-level logs"),
     output_format: OutputFormat = typer.Option(
         OutputFormat.markdown, "--format", help="Output format: markdown or json"
@@ -193,6 +199,10 @@ def run(
             )
         raise typer.Exit(code=1) from None
 
+    # A one-off run into /tmp should not require exporting OUTPUT_DIR; the flag
+    # overrides the setting for this invocation only.
+    target_dir = output_dir if output_dir is not None else settings.output_dir
+
     active_sources = resolve_sources(sources, settings)
 
     if not active_sources:
@@ -202,7 +212,7 @@ def run(
     digest = None
     if cache:
         ttl = cache_ttl if cache_ttl is not None else settings.cache_ttl
-        digest = load_cached_digest(settings.output_dir, active_sources, ttl)
+        digest = load_cached_digest(target_dir, active_sources, ttl)
         if digest is not None:
             err_console.print("[dim]Using cached digest (--cache-ttl not yet expired)[/dim]")
 
@@ -215,7 +225,7 @@ def run(
             raise typer.Exit(code=1) from None
 
         if cache:
-            save_digest_to_cache(settings.output_dir, active_sources, digest)
+            save_digest_to_cache(target_dir, active_sources, digest)
 
     if output_format is OutputFormat.json:
         # stdout stays pure JSON so the digest can be piped into jq or another tool
@@ -226,11 +236,11 @@ def run(
         content, extension = digest.narrative, "md"
 
     if not no_file:
-        settings.output_dir.mkdir(parents=True, exist_ok=True)
+        target_dir.mkdir(parents=True, exist_ok=True)
         # Derived from the digest itself rather than the wall clock: the body is
         # stamped in UTC, so a local-time filename disagreed with its contents,
         # and a --cache hit would have been filed under the wrong hour.
         timestamp = digest.generated_at.strftime("%Y-%m-%d-%H")
-        output_path = settings.output_dir / f"digest-{timestamp}.{extension}"
+        output_path = target_dir / f"digest-{timestamp}.{extension}"
         output_path.write_text(content)
         err_console.print(f"[dim]Saved to {output_path}[/dim]")
