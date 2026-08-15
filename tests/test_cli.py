@@ -284,3 +284,25 @@ def test_run_digest_exception(monkeypatch):
 
     assert result.exit_code == 1
     assert "Error:" in result.output
+
+
+def test_run_warns_about_unknown_source_names(monkeypatch):
+    """A typo in --sources must be reported, not silently dropped."""
+    from news_agent.cli import app
+
+    with patch("news_agent.cli.run_digest", new=AsyncMock(return_value=_mock_digest())):
+        result = runner.invoke(
+            app, ["run", "--no-file", "--sources", "hackernwes,hackernews"]
+        )
+
+    assert result.exit_code == 0
+    assert "Unknown source(s) ignored: hackernwes" in result.output
+
+
+def test_run_does_not_warn_for_valid_sources(monkeypatch):
+    from news_agent.cli import app
+
+    with patch("news_agent.cli.run_digest", new=AsyncMock(return_value=_mock_digest())):
+        result = runner.invoke(app, ["run", "--no-file", "--sources", "hackernews"])
+
+    assert "Unknown source" not in result.output

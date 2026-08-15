@@ -86,9 +86,20 @@ def config_check():
 
 
 def resolve_sources(sources_flag: Optional[str], settings: Settings) -> list[str]:
-    """Return active sources after applying --sources flag and auto-detect."""
+    """Return active sources after applying --sources flag and auto-detect.
+
+    A name that is not registered at all is reported on stderr: silently
+    dropping it made a typo such as ``--sources hackernwes`` look like a
+    successful run over a source that never ran.
+    """
     if sources_flag:
-        requested = [s.strip() for s in sources_flag.split(",")]
+        requested = [s.strip() for s in sources_flag.split(",") if s.strip()]
+        unknown = [s for s in requested if s not in SOURCE_NAMES]
+        if unknown:
+            err_console.print(
+                f"[yellow]Unknown source(s) ignored: {', '.join(unknown)}. "
+                f"Available: {', '.join(SOURCE_NAMES)}[/yellow]"
+            )
     else:
         requested = list(settings.default_sources)
 
