@@ -127,3 +127,27 @@ async def test_newsapi_retries_on_transient_error(monkeypatch):
 
     assert result.error is None
     assert len(result.articles) == 10
+
+
+async def test_newsapi_skips_articles_with_a_malformed_timestamp(monkeypatch):
+    """A bad publishedAt must drop that item, not the whole page."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.setenv("NEWSAPI_KEY", "key")
+    from news_agent.agents.newsapi import NewsAPIAgent
+    from news_agent.config import get_settings
+
+    get_settings.cache_clear()
+
+    broken = _make_article(2)
+    broken["publishedAt"] = "not-a-date"
+
+    with respx.mock:
+        respx.get(NEWSAPI_URL).mock(
+            return_value=_newsapi_response([_make_article(1), broken])
+        )
+
+        result = await NewsAPIAgent().fetch()
+
+    get_settings.cache_clear()
+    assert result.error is None
+    assert len(result.articles) == 1
