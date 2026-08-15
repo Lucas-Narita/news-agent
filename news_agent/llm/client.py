@@ -47,4 +47,6 @@ async def generate_narrative(articles: list[Article], settings: Settings) -> str
     text_blocks = [b for b in response.content if getattr(b, "type", None) == "text"]
     if not text_blocks:
         return "Narrative unavailable — the model returned no text content."
-    return text_blocks[0].text
+    # A response may legitimately arrive as several text blocks; taking only the
+    # first silently truncated the digest.
+    return "\n".join(block.text for block in text_blocks)

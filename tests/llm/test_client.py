@@ -144,3 +144,27 @@ async def test_generate_narrative_uses_configured_model_and_budget(monkeypatch):
     kwargs = mock_create.await_args.kwargs
     assert kwargs["model"] == "claude-haiku-4-5-20251001"
     assert kwargs["max_tokens"] == 256
+
+
+async def test_generate_narrative_joins_multiple_text_blocks(monkeypatch):
+    """Taking only the first block silently truncated multi-block responses."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    from news_agent.config import Settings
+
+    def _block(text: str) -> MagicMock:
+        block = MagicMock()
+        block.type = "text"
+        block.text = text
+        return block
+
+    response = MagicMock()
+    response.content = [_block("# Digest"), _block("## Trends")]
+    response.stop_reason = "end_turn"
+
+    with patch("news_agent.llm.client.anthropic.AsyncAnthropic") as MockClient:
+        MockClient.return_value.messages.create = AsyncMock(return_value=response)
+        from news_agent.llm.client import generate_narrative
+
+        result = await generate_narrative([_make_article()], Settings())
+
+    assert result == "# Digest\n## Trends"
