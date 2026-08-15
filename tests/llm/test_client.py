@@ -123,3 +123,24 @@ async def test_generate_narrative_warns_on_truncation(monkeypatch, caplog):
             await generate_narrative([_make_article()], settings)
 
     assert any("truncated" in record.message for record in caplog.records)
+
+
+async def test_generate_narrative_uses_configured_model_and_budget(monkeypatch):
+    """Model and token budget are deployment knobs, not module constants."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.setenv("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001")
+    monkeypatch.setenv("MAX_TOKENS", "256")
+    from news_agent.config import Settings
+
+    settings = Settings()
+
+    mock_create = AsyncMock(return_value=_mock_response())
+    with patch("news_agent.llm.client.anthropic.AsyncAnthropic") as MockClient:
+        MockClient.return_value.messages.create = mock_create
+        from news_agent.llm.client import generate_narrative
+
+        await generate_narrative([_make_article()], settings)
+
+    kwargs = mock_create.await_args.kwargs
+    assert kwargs["model"] == "claude-haiku-4-5-20251001"
+    assert kwargs["max_tokens"] == 256

@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     # Default freshness window for --cache. Lives here rather than as a CLI
     # literal so scheduled runs can widen it without changing the invocation.
     cache_ttl: int = Field(default=3600, gt=0)
+    # Model and budget are the two knobs most likely to be tuned per
+    # deployment (cost vs. depth), so they belong in config rather than as
+    # module constants that require a code change to move.
+    anthropic_model: str = "claude-sonnet-4-6"
+    max_tokens: int = Field(default=1024, gt=0)
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

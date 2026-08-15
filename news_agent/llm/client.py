@@ -10,9 +10,6 @@ from news_agent.schemas.models import Article
 
 logger = logging.getLogger(__name__)
 
-MODEL = "claude-sonnet-4-6"
-MAX_TOKENS = 1024
-
 
 async def generate_narrative(articles: list[Article], settings: Settings) -> str:
     """Call Claude to turn the curated articles into a Markdown digest.
@@ -26,8 +23,8 @@ async def generate_narrative(articles: list[Article], settings: Settings) -> str
 
     client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
     response = await client.messages.create(
-        model=MODEL,
-        max_tokens=MAX_TOKENS,
+        model=settings.anthropic_model,
+        max_tokens=settings.max_tokens,
         system=[
             {
                 "type": "text",
@@ -45,7 +42,7 @@ async def generate_narrative(articles: list[Article], settings: Settings) -> str
     if response.stop_reason == "max_tokens":
         logger.warning(
             "narrative generation truncated at max_tokens=%d; digest may be incomplete",
-            MAX_TOKENS,
+            settings.max_tokens,
         )
     text_blocks = [b for b in response.content if getattr(b, "type", None) == "text"]
     if not text_blocks:
