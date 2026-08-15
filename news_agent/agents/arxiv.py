@@ -10,7 +10,6 @@ from news_agent.retry import with_retry
 from news_agent.schemas.models import Article
 
 ARXIV_URL = "https://export.arxiv.org/api/query"
-DEFAULT_CATEGORY = "cs.AI"
 MAX_RESULTS = 10
 
 ATOM_NS = {"atom": "http://www.w3.org/2005/Atom"}
