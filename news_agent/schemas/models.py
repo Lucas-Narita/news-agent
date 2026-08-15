@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Article(BaseModel):
@@ -33,5 +33,5 @@ class DigestOutput(BaseModel):
     sources_used: list[str]
     total_articles: int
     generated_at: datetime
-    articles: list[Article] = []
-    agents: list[AgentStatus] = []
+    articles: list[Article] = Field(default_factory=list)
+    agents: list[AgentStatus] = Field(default_factory=list)
