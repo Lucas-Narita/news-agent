@@ -24,6 +24,13 @@ async def run_digest(
     unexpected exception (should a future agent violate that contract) is
     caught via asyncio.gather(return_exceptions=True) and treated the same way.
     """
+    unknown = [s for s in sources if s not in _REGISTRY]
+    if unknown:
+        # The CLI already filters these out, but run_digest() is also called
+        # directly (tests, the scheduled workflow). Dropping a name in silence
+        # made an under-populated digest look like a quiet news day.
+        logger.warning("ignoring unregistered source(s): %s", ", ".join(unknown))
+
     agents = [_REGISTRY[s]() for s in sources if s in _REGISTRY]
     # return_exceptions=True is defense in depth: BaseAgent.fetch() already
     # never raises, but a bug in a future agent must degrade that one source
@@ -52,7 +59,15 @@ async def run_digest(
         else:
             logger.warning("source %s failed: %s", result.source, result.error)
 
+    fetched_count = len(articles)
     articles = rank_by_score(deduplicate(articles))
+    logger.info(
+        "fetched %d articles from %d/%d sources; %d left after dedup",
+        fetched_count,
+        len(sources_used),
+        len(agents),
+        len(articles),
+    )
     if limit is not None:
         articles = articles[:limit]
 
