@@ -23,7 +23,8 @@ as JSON.
 | **Pydantic at every boundary** | Validation happens where data enters the system. If an upstream API changes shape, the failure surfaces as a clear `AgentResult.error`, not a silent `KeyError` deep in the pipeline. |
 | **Errors as data (`AgentResult.error`)** | Agents never raise. The orchestrator doesn't need to know *how* each API fails — it just skips sources with an error and logs it. One dead API degrades the digest instead of breaking the run. |
 | **Retry with exponential backoff** | A generic `with_retry` helper wraps every source's main request, so a transient timeout or 5xx is retried instead of costing the whole source. |
-| **Dedupe + rank before the LLM** | The same story surfaces on several sources; duplicates are collapsed by URL (keeping the highest-scored copy) and the survivors are ranked by score. The LLM only ever sees a clean, prioritized list — which also trims token cost. |
+| **Dedupe + rank before the LLM** | The same story surfaces on several sources; duplicates are collapsed by *canonical* URL — tracking parameters and trailing slashes stripped, so a Reddit cross-post and its Dev.to share collapse into one — keeping the highest-scored copy. The LLM only ever sees a clean, prioritized list, which also trims token cost. |
+| **Deterministic output** | Ranking ties break by recency then URL, and digest sections render in declared source order. The same articles always produce byte-identical Markdown, regardless of which agent finished first — which keeps the LLM's context stable across runs. |
 | **LLM only on the narrative step** | Fetch, normalize, dedupe, and rank are deterministic code. Claude is called once, at the end, where language generation is the actual requirement. Cheaper, and the whole pipeline is testable without mocking an LLM. |
 | **Prompt caching** | The large, fixed system prompt is sent as a cached (`ephemeral`) block, so repeated runs only pay for the small, varying user message. |
 
@@ -110,6 +111,10 @@ cp .env.example .env
 | `NEWSAPI_KEY` | No | [NewsAPI](https://newsapi.org/) key — enables the `newsapi` source |
 | `GITHUB_TOKEN` | No | GitHub token — raises the rate limit from 60 to 5000 req/h |
 | `REQUEST_TIMEOUT` | No | Per-request HTTP timeout in seconds (default `10`) |
+| `CACHE_TTL` | No | Freshness window for `--cache`, in seconds (default `3600`) |
+| `ANTHROPIC_MODEL` | No | Claude model used for the narrative (default `claude-sonnet-4-6`) |
+| `MAX_TOKENS` | No | Token budget for the narrative (default `1024`) |
+| `ARXIV_CATEGORY` | No | arXiv category the `arxiv` agent tracks (default `cs.AI`) |
 
 Hacker News, Reddit, Dev.to, Lobsters, and arXiv need no credentials. `newsapi` auto-disables
 when its key is missing instead of erroring.
@@ -133,6 +138,12 @@ news-agent run --verbose
 
 # Emit machine-readable JSON (stdout stays clean, so it pipes into jq)
 news-agent run --format json --no-file | jq '.articles[].url'
+
+# Write this run's digest somewhere else, without exporting OUTPUT_DIR
+news-agent run --output-dir /tmp/digests
+
+# List every registered source and whether it is usable right now
+news-agent sources
 
 # Inspect configuration status
 news-agent config check
