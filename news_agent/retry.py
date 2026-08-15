@@ -5,13 +5,21 @@ connections). This helper retries any awaitable operation, doubling the delay
 between attempts, so a brief blip does not cost the whole source.
 """
 
+import logging
 from asyncio import sleep
 from collections.abc import Awaitable, Callable
 from typing import TypeVar
 
 import httpx
 
+logger = logging.getLogger(__name__)
+
 T = TypeVar("T")
+
+# Doubling is unbounded by nature; with the default 10s request timeout a
+# single source could otherwise stall the whole gather() far longer than the
+# digest is worth waiting for.
+MAX_DELAY = 8.0
 
 
 async def with_retry(
@@ -19,12 +27,13 @@ async def with_retry(
     *,
     retries: int = 3,
     base_delay: float = 0.5,
+    max_delay: float = MAX_DELAY,
 ) -> T:
     """Run ``operation``, retrying on exception with exponential backoff.
 
     Tries up to ``retries`` times. After a failed attempt it sleeps
-    ``base_delay * 2**attempt`` seconds before the next one. If every attempt
-    fails, the last exception propagates to the caller.
+    ``min(base_delay * 2**attempt, max_delay)`` seconds before the next one. If
+    every attempt fails, the last exception propagates to the caller.
     """
     for attempt in range(retries):
         try:
@@ -36,5 +45,13 @@ async def with_retry(
                 raise
             if attempt == retries - 1:
                 raise
-            await sleep(base_delay * (2**attempt))
+            delay = min(base_delay * (2**attempt), max_delay)
+            logger.info(
+                "attempt %d/%d failed (%s); retrying in %.1fs",
+                attempt + 1,
+                retries,
+                exc,
+                delay,
+            )
+            await sleep(delay)
     raise RuntimeError("with_retry called with retries < 1")  # pragma: no cover
