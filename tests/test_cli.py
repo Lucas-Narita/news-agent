@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 from typer.testing import CliRunner
@@ -291,9 +291,7 @@ def test_run_warns_about_unknown_source_names(monkeypatch):
     from news_agent.cli import app
 
     with patch("news_agent.cli.run_digest", new=AsyncMock(return_value=_mock_digest())):
-        result = runner.invoke(
-            app, ["run", "--no-file", "--sources", "hackernwes,hackernews"]
-        )
+        result = runner.invoke(app, ["run", "--no-file", "--sources", "hackernwes,hackernews"])
 
     assert result.exit_code == 0
     assert "Unknown source(s) ignored: hackernwes" in result.output
@@ -319,7 +317,6 @@ def test_run_rejects_non_positive_limit():
 
 def test_output_filename_follows_the_digest_timestamp(tmp_path, monkeypatch):
     """The file name must match the timestamp stamped inside the digest."""
-    from datetime import timezone
 
     from news_agent.cli import app
 
@@ -329,7 +326,7 @@ def test_output_filename_follows_the_digest_timestamp(tmp_path, monkeypatch):
     get_settings.cache_clear()
 
     digest = _mock_digest()
-    digest.generated_at = datetime(2026, 1, 2, 3, 4, tzinfo=timezone.utc)
+    digest.generated_at = datetime(2026, 1, 2, 3, 4, tzinfo=UTC)
 
     with patch("news_agent.cli.run_digest", new=AsyncMock(return_value=digest)):
         result = runner.invoke(app, ["run", "--sources", "hackernews"])

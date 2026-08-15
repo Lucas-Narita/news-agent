@@ -1,3 +1,5 @@
+from datetime import UTC
+
 from news_agent.processing import deduplicate, rank_by_score
 from news_agent.schemas.models import Article
 
@@ -105,7 +107,7 @@ def test_deduplicate_keeps_genuinely_different_paths():
 
 def test_rank_by_score_breaks_ties_deterministically():
     """Equal scores must not depend on which agent finished first."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from news_agent.processing import rank_by_score
 
@@ -114,14 +116,14 @@ def test_rank_by_score_breaks_ties_deterministically():
         url="https://example.com/older",
         source="hackernews",
         score=100,
-        published_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        published_at=datetime(2026, 1, 1, tzinfo=UTC),
     )
     newer = Article(
         title="Newer",
         url="https://example.com/newer",
         source="reddit",
         score=100,
-        published_at=datetime(2026, 6, 1, tzinfo=timezone.utc),
+        published_at=datetime(2026, 6, 1, tzinfo=UTC),
     )
 
     assert rank_by_score([older, newer]) == rank_by_score([newer, older])
@@ -130,7 +132,7 @@ def test_rank_by_score_breaks_ties_deterministically():
 
 def test_rank_by_score_tolerates_naive_timestamps():
     """A source returning a naive datetime must not break the sort."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from news_agent.processing import rank_by_score
 
@@ -146,7 +148,7 @@ def test_rank_by_score_tolerates_naive_timestamps():
         url="https://example.com/aware",
         source="hackernews",
         score=5,
-        published_at=datetime(2026, 2, 1, tzinfo=timezone.utc),
+        published_at=datetime(2026, 2, 1, tzinfo=UTC),
     )
 
     assert len(rank_by_score([naive, aware])) == 2

@@ -147,9 +147,7 @@ async def test_hackernews_skips_items_missing_required_fields():
     broken = {"url": "https://example.com/broken", "score": 5}  # no title, no time
 
     with respx.mock:
-        respx.get(f"{HN_BASE}/topstories.json").mock(
-            return_value=httpx.Response(200, json=[1, 2])
-        )
+        respx.get(f"{HN_BASE}/topstories.json").mock(return_value=httpx.Response(200, json=[1, 2]))
         respx.get(f"{HN_BASE}/item/1.json").mock(return_value=httpx.Response(200, json=good))
         respx.get(f"{HN_BASE}/item/2.json").mock(return_value=httpx.Response(200, json=broken))
 
@@ -164,9 +162,7 @@ async def test_hackernews_logs_how_long_the_fetch_took(caplog):
     from news_agent.agents.hackernews import HackerNewsAgent
 
     with respx.mock:
-        respx.get(f"{HN_BASE}/topstories.json").mock(
-            return_value=httpx.Response(200, json=[1])
-        )
+        respx.get(f"{HN_BASE}/topstories.json").mock(return_value=httpx.Response(200, json=[1]))
         respx.get(f"{HN_BASE}/item/1.json").mock(
             return_value=httpx.Response(200, json=_make_item(1))
         )

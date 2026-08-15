@@ -1,7 +1,6 @@
 import asyncio
 from enum import Enum
 from importlib.metadata import version
-from typing import Optional
 
 import typer
 from pydantic import ValidationError
@@ -111,18 +110,19 @@ def list_sources():
 
     for name in SOURCE_NAMES:
         requires = SOURCE_REQUIREMENTS.get(name, "")
-        if not requires:
-            status = "[green]ready[/green]"
-        elif settings is not None and getattr(settings, SOURCE_SETTING[name], None):
-            status = "[green]ready[/green]"
-        else:
-            status = "[yellow]needs key[/yellow]"
+        setting_name = SOURCE_SETTING.get(name)
+        has_key = (
+            settings is not None
+            and setting_name is not None
+            and getattr(settings, setting_name, None) is not None
+        )
+        status = "[green]ready[/green]" if not requires or has_key else "[yellow]needs key[/yellow]"
         table.add_row(name, status, requires or "nothing")
 
     console.print(table)
 
 
-def resolve_sources(sources_flag: Optional[str], settings: Settings) -> list[str]:
+def resolve_sources(sources_flag: str | None, settings: Settings) -> list[str]:
     """Return active sources after applying --sources flag and auto-detect.
 
     A name that is not registered at all is reported on stderr: silently
@@ -140,7 +140,7 @@ def resolve_sources(sources_flag: Optional[str], settings: Settings) -> list[str
     else:
         requested = list(settings.default_sources)
 
-    available = {name: True for name in SOURCE_NAMES}
+    available = dict.fromkeys(SOURCE_NAMES, True)
     available["newsapi"] = settings.newsapi_key is not None
 
     return [s for s in requested if available.get(s, False)]
@@ -148,13 +148,13 @@ def resolve_sources(sources_flag: Optional[str], settings: Settings) -> list[str
 
 @app.command()
 def run(
-    sources: Optional[str] = typer.Option(
+    sources: str | None = typer.Option(
         None,
         "--sources",
         help=f"Comma-separated: {', '.join(SOURCE_NAMES)}",
     ),
     no_file: bool = typer.Option(False, "--no-file", help="Print to terminal only, skip .md file"),
-    limit: Optional[int] = typer.Option(
+    limit: int | None = typer.Option(
         None,
         "--limit",
         min=1,
@@ -167,7 +167,7 @@ def run(
     cache: bool = typer.Option(
         False, "--cache", help="Reuse a cached digest for the same sources within --cache-ttl"
     ),
-    cache_ttl: Optional[int] = typer.Option(
+    cache_ttl: int | None = typer.Option(
         None,
         "--cache-ttl",
         min=1,

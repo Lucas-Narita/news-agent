@@ -5,7 +5,7 @@ pure (no I/O, no mutation) means the orchestrator's data-quality rules are unit
 testable without touching the network.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from news_agent.schemas.models import Article
@@ -46,9 +46,9 @@ def _published_key(article: Article) -> datetime:
     """
     published = article.published_at
     if published is None:
-        return datetime.min.replace(tzinfo=timezone.utc)
+        return datetime.min.replace(tzinfo=UTC)
     if published.tzinfo is None:
-        return published.replace(tzinfo=timezone.utc)
+        return published.replace(tzinfo=UTC)
     return published
 
 

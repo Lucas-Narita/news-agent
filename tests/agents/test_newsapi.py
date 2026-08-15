@@ -142,9 +142,7 @@ async def test_newsapi_skips_articles_with_a_malformed_timestamp(monkeypatch):
     broken["publishedAt"] = "not-a-date"
 
     with respx.mock:
-        respx.get(NEWSAPI_URL).mock(
-            return_value=_newsapi_response([_make_article(1), broken])
-        )
+        respx.get(NEWSAPI_URL).mock(return_value=_newsapi_response([_make_article(1), broken]))
 
         result = await NewsAPIAgent().fetch()
 

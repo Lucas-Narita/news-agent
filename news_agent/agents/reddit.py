@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 
@@ -24,7 +24,7 @@ def _parse_child(child: dict, source: str) -> Article | None:
             url=data["url"],
             source=source,
             score=data.get("score"),
-            published_at=datetime.fromtimestamp(data["created_utc"], tz=timezone.utc),
+            published_at=datetime.fromtimestamp(data["created_utc"], tz=UTC),
         )
     except (KeyError, ValueError, TypeError):
         return None

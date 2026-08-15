@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 
@@ -33,9 +33,7 @@ class GitHubAgent(BaseAgent):
 
     async def _fetch_articles(self, client: httpx.AsyncClient) -> list[Article]:
         settings = get_settings()
-        since = (datetime.now(timezone.utc) - timedelta(days=TRENDING_WINDOW_DAYS)).strftime(
-            "%Y-%m-%d"
-        )
+        since = (datetime.now(UTC) - timedelta(days=TRENDING_WINDOW_DAYS)).strftime("%Y-%m-%d")
         headers = (
             {"Authorization": f"Bearer {settings.github_token}"} if settings.github_token else {}
         )

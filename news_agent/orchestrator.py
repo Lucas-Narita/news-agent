@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from news_agent.agents.registry import AGENT_REGISTRY
 from news_agent.config import Settings
@@ -76,7 +76,7 @@ async def run_digest(
             narrative="No articles available. All sources failed or returned no results.",
             sources_used=[],
             total_articles=0,
-            generated_at=datetime.now(timezone.utc),
+            generated_at=datetime.now(UTC),
             agents=roster,
         )
 
@@ -94,7 +94,7 @@ async def run_digest(
         narrative=narrative,
         sources_used=sources_used,
         total_articles=len(articles),
-        generated_at=datetime.now(timezone.utc),
+        generated_at=datetime.now(UTC),
         articles=articles,
         agents=roster,
     )

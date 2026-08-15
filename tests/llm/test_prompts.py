@@ -27,7 +27,9 @@ def test_system_prompt_keeps_the_output_contract():
 
 
 def test_build_user_message_carries_date_and_sources():
-    message = build_user_message("## Hacker News\n- **X** — https://x.dev", "2026-08-14", ["hackernews"])
+    message = build_user_message(
+        "## Hacker News\n- **X** — https://x.dev", "2026-08-14", ["hackernews"]
+    )
     assert "Date: 2026-08-14" in message
     assert "Sources: hackernews" in message
     assert "https://x.dev" in message

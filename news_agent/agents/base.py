@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from importlib.metadata import PackageNotFoundError, version
 from time import perf_counter
 
@@ -56,7 +56,7 @@ class BaseAgent(ABC):
             return AgentResult(
                 source=self.name,
                 articles=[],
-                fetched_at=datetime.now(timezone.utc),
+                fetched_at=datetime.now(UTC),
                 error=precheck_error,
             )
 
@@ -73,7 +73,7 @@ class BaseAgent(ABC):
             # is the first question when a scheduled run starts timing out.
             logger.info("%s failed after %.2fs: %s", self.name, perf_counter() - started, e)
             return AgentResult(
-                source=self.name, articles=[], fetched_at=datetime.now(timezone.utc), error=str(e)
+                source=self.name, articles=[], fetched_at=datetime.now(UTC), error=str(e)
             )
 
         logger.info(
@@ -82,6 +82,4 @@ class BaseAgent(ABC):
             len(articles),
             perf_counter() - started,
         )
-        return AgentResult(
-            source=self.name, articles=articles, fetched_at=datetime.now(timezone.utc)
-        )
+        return AgentResult(source=self.name, articles=articles, fetched_at=datetime.now(UTC))

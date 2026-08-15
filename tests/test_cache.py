@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from news_agent.cache import load_cached_digest, save_digest_to_cache
 from news_agent.schemas.models import DigestOutput
@@ -9,7 +9,7 @@ def _digest(narrative: str = "# Digest") -> DigestOutput:
         narrative=narrative,
         sources_used=["hackernews"],
         total_articles=1,
-        generated_at=datetime.now(timezone.utc),
+        generated_at=datetime.now(UTC),
     )
 
 

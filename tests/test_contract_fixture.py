@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 
 from news_agent.schemas.models import AgentStatus, Article, DigestOutput
@@ -22,14 +22,14 @@ def _canonical_digest() -> DigestOutput:
         ),
         sources_used=["hackernews", "devto", "lobsters"],
         total_articles=3,
-        generated_at=datetime(2026, 7, 1, 4, 0, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 7, 1, 4, 0, tzinfo=UTC),
         articles=[
             Article(
                 title="A local-first model",
                 url="https://example.com/a",
                 source="hackernews",
                 score=412,
-                published_at=datetime(2026, 6, 30, 13, 0, tzinfo=timezone.utc),
+                published_at=datetime(2026, 6, 30, 13, 0, tzinfo=UTC),
                 summary=None,
             ),
             Article(
@@ -37,7 +37,7 @@ def _canonical_digest() -> DigestOutput:
                 url="https://example.com/b",
                 source="devto",
                 score=210,
-                published_at=datetime(2026, 6, 29, 9, 30, tzinfo=timezone.utc),
+                published_at=datetime(2026, 6, 29, 9, 30, tzinfo=UTC),
                 summary="A short description.",
             ),
             Article(

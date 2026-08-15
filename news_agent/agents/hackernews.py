@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 
@@ -28,7 +28,7 @@ def _parse_item(item: dict, source: str) -> Article | None:
             url=item["url"],
             source=source,
             score=item.get("score"),
-            published_at=datetime.fromtimestamp(item["time"], tz=timezone.utc),
+            published_at=datetime.fromtimestamp(item["time"], tz=UTC),
         )
     except (KeyError, ValueError, TypeError, OSError):
         return None

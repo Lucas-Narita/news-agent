@@ -68,4 +68,11 @@ target-version = "py311"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+# UP/C4/SIM catch the modernization and simplification drift that accumulates
+# in a codebase supporting 3.11+ but written against older habits.
+select = ["E", "F", "I", "UP", "C4", "SIM"]
+ignore = [
+    # Typer resolves CLI parameter types from the annotation; str+Enum is the
+    # documented pattern and StrEnum changes how the choices are rendered.
+    "UP042",
+]

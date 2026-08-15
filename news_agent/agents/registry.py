@@ -19,14 +19,16 @@ from news_agent.agents.reddit import RedditAgent
 # Read-only: the registry is process-wide shared state, and Settings and the
 # CLI both derive their source list from it. A stray mutation would silently
 # change what every later caller sees.
-AGENT_REGISTRY: Mapping[str, type[BaseAgent]] = MappingProxyType({
-    "hackernews": HackerNewsAgent,
-    "github": GitHubAgent,
-    "newsapi": NewsAPIAgent,
-    "reddit": RedditAgent,
-    "devto": DevToAgent,
-    "lobsters": LobstersAgent,
-    "arxiv": ArxivAgent,
-})
+AGENT_REGISTRY: Mapping[str, type[BaseAgent]] = MappingProxyType(
+    {
+        "hackernews": HackerNewsAgent,
+        "github": GitHubAgent,
+        "newsapi": NewsAPIAgent,
+        "reddit": RedditAgent,
+        "devto": DevToAgent,
+        "lobsters": LobstersAgent,
+        "arxiv": ArxivAgent,
+    }
+)
 
 SOURCE_NAMES: list[str] = list(AGENT_REGISTRY.keys())
