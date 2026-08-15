@@ -65,3 +65,13 @@ def test_render_digest_names_unavailable_sources():
 def test_render_digest_omits_the_notice_when_every_source_worked():
     out = _render(_digest_with_agents(("hackernews", True), ("github", True)))
     assert "Sources unavailable" not in out
+
+
+def test_render_digest_shows_when_it_was_generated():
+    """With --cache a reused digest is otherwise indistinguishable from a fresh one."""
+    from datetime import UTC
+
+    digest = _digest()
+    digest.generated_at = datetime(2026, 8, 14, 4, 0, tzinfo=UTC)
+
+    assert "2026-08-14 04:00 UTC" in _render(digest)

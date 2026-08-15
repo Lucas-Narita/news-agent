@@ -14,7 +14,14 @@ def render_digest(digest: DigestOutput, console: Console | None = None) -> None:
     console.print(Markdown(digest.narrative))
 
     if digest.sources_used:
-        meta = f"{digest.total_articles} articles | sources: {', '.join(digest.sources_used)}"
+        # The timestamp matters once --cache is in play: without it a reused
+        # digest is indistinguishable from a fresh one.
+        generated = digest.generated_at.strftime("%Y-%m-%d %H:%M UTC")
+        meta = (
+            f"{digest.total_articles} articles | "
+            f"sources: {', '.join(digest.sources_used)} | "
+            f"generated {generated}"
+        )
         console.print(Panel(meta, expand=False, border_style="dim"))
 
     # A source that failed contributed nothing to sources_used, so without this
