@@ -1,5 +1,4 @@
 import asyncio
-from datetime import datetime
 from enum import Enum
 from importlib.metadata import version
 from typing import Optional
@@ -186,7 +185,10 @@ def run(
 
     if not no_file:
         settings.output_dir.mkdir(parents=True, exist_ok=True)
-        timestamp = datetime.now().strftime("%Y-%m-%d-%H")
+        # Derived from the digest itself rather than the wall clock: the body is
+        # stamped in UTC, so a local-time filename disagreed with its contents,
+        # and a --cache hit would have been filed under the wrong hour.
+        timestamp = digest.generated_at.strftime("%Y-%m-%d-%H")
         output_path = settings.output_dir / f"digest-{timestamp}.{extension}"
         output_path.write_text(content)
         err_console.print(f"[dim]Saved to {output_path}[/dim]")

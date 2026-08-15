@@ -315,3 +315,25 @@ def test_run_rejects_non_positive_limit():
     result = runner.invoke(app, ["run", "--no-file", "--limit", "0"])
 
     assert result.exit_code != 0
+
+
+def test_output_filename_follows_the_digest_timestamp(tmp_path, monkeypatch):
+    """The file name must match the timestamp stamped inside the digest."""
+    from datetime import timezone
+
+    from news_agent.cli import app
+
+    monkeypatch.setenv("OUTPUT_DIR", str(tmp_path))
+    from news_agent.config import get_settings
+
+    get_settings.cache_clear()
+
+    digest = _mock_digest()
+    digest.generated_at = datetime(2026, 1, 2, 3, 4, tzinfo=timezone.utc)
+
+    with patch("news_agent.cli.run_digest", new=AsyncMock(return_value=digest)):
+        result = runner.invoke(app, ["run", "--sources", "hackernews"])
+
+    get_settings.cache_clear()
+    assert result.exit_code == 0
+    assert (tmp_path / "digest-2026-01-02-03.md").exists()
