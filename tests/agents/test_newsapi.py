@@ -146,6 +146,5 @@ async def test_newsapi_skips_articles_with_a_malformed_timestamp(monkeypatch):
 
         result = await NewsAPIAgent().fetch()
 
-    get_settings.cache_clear()
     assert result.error is None
     assert len(result.articles) == 1

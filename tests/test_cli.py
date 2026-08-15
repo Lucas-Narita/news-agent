@@ -253,7 +253,6 @@ def test_run_config_validation_error(monkeypatch):
 
     get_settings.cache_clear()
     result = runner.invoke(app, ["run", "--no-file", "--sources", "hackernews"])
-    get_settings.cache_clear()
     assert result.exit_code == 1
     assert "ANTHROPIC_API_KEY" in result.output
     assert ".env.example" in result.output
@@ -268,7 +267,6 @@ def test_run_no_active_sources(monkeypatch):
 
     get_settings.cache_clear()
     result = runner.invoke(app, ["run", "--no-file", "--sources", "newsapi"])
-    get_settings.cache_clear()
     assert result.exit_code == 1
     assert "No sources available" in result.output
 
@@ -331,7 +329,6 @@ def test_output_filename_follows_the_digest_timestamp(tmp_path, monkeypatch):
     with patch("news_agent.cli.run_digest", new=AsyncMock(return_value=digest)):
         result = runner.invoke(app, ["run", "--sources", "hackernews"])
 
-    get_settings.cache_clear()
     assert result.exit_code == 0
     assert (tmp_path / "digest-2026-01-02-03.md").exists()
 
@@ -359,7 +356,6 @@ def test_sources_command_flags_newsapi_without_a_key(monkeypatch):
 
     result = runner.invoke(app, ["sources"])
 
-    get_settings.cache_clear()
     assert "NEWSAPI_KEY" in result.output
 
 
@@ -373,7 +369,6 @@ def test_config_check_shows_non_secret_settings(monkeypatch):
 
     result = runner.invoke(app, ["config", "check"])
 
-    get_settings.cache_clear()
     assert result.exit_code == 0
     assert "OUTPUT_DIR" in result.output
     assert "REQUEST_TIMEOUT" in result.output
