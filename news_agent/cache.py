@@ -43,10 +43,13 @@ def load_cached_digest(
         return None
 
     try:
-        return DigestOutput.model_validate_json(path.read_text())
+        digest = DigestOutput.model_validate_json(path.read_text())
     except Exception:
         logger.warning("cache file %s is unreadable; ignoring", path)
         return None
+
+    logger.info("cache hit for %s (%.0fs old)", ",".join(sorted(sources)), age_seconds)
+    return digest
 
 
 def save_digest_to_cache(output_dir: Path, sources: list[str], digest: DigestOutput) -> None:
