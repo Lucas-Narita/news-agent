@@ -1,11 +1,15 @@
+import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from importlib.metadata import PackageNotFoundError, version
+from time import perf_counter
 
 import httpx
 
 from news_agent.config import get_settings
 from news_agent.schemas.models import AgentResult, Article
+
+logger = logging.getLogger(__name__)
 
 
 def _user_agent() -> str:
@@ -57,6 +61,7 @@ class BaseAgent(ABC):
             )
 
         settings = get_settings()
+        started = perf_counter()
         try:
             async with httpx.AsyncClient(
                 timeout=settings.request_timeout,
@@ -64,10 +69,19 @@ class BaseAgent(ABC):
             ) as client:
                 articles = await self._fetch_articles(client)
         except Exception as e:
+            # Timing the failure too: "which source is making the digest slow"
+            # is the first question when a scheduled run starts timing out.
+            logger.info("%s failed after %.2fs: %s", self.name, perf_counter() - started, e)
             return AgentResult(
                 source=self.name, articles=[], fetched_at=datetime.now(timezone.utc), error=str(e)
             )
 
+        logger.info(
+            "%s returned %d articles in %.2fs",
+            self.name,
+            len(articles),
+            perf_counter() - started,
+        )
         return AgentResult(
             source=self.name, articles=articles, fetched_at=datetime.now(timezone.utc)
         )

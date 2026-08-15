@@ -157,3 +157,21 @@ async def test_hackernews_skips_items_missing_required_fields():
 
     assert result.error is None
     assert len(result.articles) == 1
+
+
+async def test_hackernews_logs_how_long_the_fetch_took(caplog):
+    """'Which source is slow' is the first question when a scheduled run drags."""
+    from news_agent.agents.hackernews import HackerNewsAgent
+
+    with respx.mock:
+        respx.get(f"{HN_BASE}/topstories.json").mock(
+            return_value=httpx.Response(200, json=[1])
+        )
+        respx.get(f"{HN_BASE}/item/1.json").mock(
+            return_value=httpx.Response(200, json=_make_item(1))
+        )
+
+        with caplog.at_level("INFO", logger="news_agent.agents.base"):
+            await HackerNewsAgent().fetch()
+
+    assert "hackernews returned 1 articles" in caplog.text
